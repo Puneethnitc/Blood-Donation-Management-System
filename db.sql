@@ -1,3 +1,5 @@
+CREATE DATABASE BDMS;
+USE BDMS;
 
 -- 1. Main User Table
 CREATE TABLE User (
@@ -21,17 +23,17 @@ CREATE TABLE Donor (
     donor_id CHAR(10) PRIMARY KEY,
     blood_grp ENUM('A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-') NOT NULL,
     dob DATE,
-    FOREIGN KEY (donor_id) REFERENCES User(user_id) ON DELETE CASCADE
+    FOREIGN KEY (donor_id) REFERENCES User(user_id) ON DELETE RESTRICT
 );
 
 CREATE TABLE Hospital (
     hospital_id CHAR(10) PRIMARY KEY,
-    FOREIGN KEY (hospital_id) REFERENCES User(user_id) ON DELETE CASCADE
+    FOREIGN KEY (hospital_id) REFERENCES User(user_id) ON DELETE RESTRICT
 );
 
 CREATE TABLE Blood_Bank (
     bank_id CHAR(10) PRIMARY KEY,
-    FOREIGN KEY (bank_id) REFERENCES User(user_id) ON DELETE CASCADE
+    FOREIGN KEY (bank_id) REFERENCES User(user_id) ON DELETE RESTRICT
 );
 
 -- 3. Location & Relations
@@ -39,7 +41,7 @@ CREATE TABLE Organization_Location (
     organisation_id CHAR(10) PRIMARY KEY,
     latitude DECIMAL(9,6),
     longitude DECIMAL(9,6),
-    FOREIGN KEY (organisation_id) REFERENCES User(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (organisation_id) REFERENCES User(user_id) ON DELETE RESTRICT,
     -- Ensures no two organizations are logged at the exact same GPS coordinate
     UNIQUE (latitude, longitude)
 );
@@ -48,8 +50,8 @@ CREATE TABLE Owns (
     hospital_id CHAR(10),
     bank_id CHAR(10),
     PRIMARY KEY (hospital_id, bank_id),
-    FOREIGN KEY (bank_id) REFERENCES Blood_Bank(bank_id) ON DELETE CASCADE,
-    FOREIGN KEY (hospital_id) REFERENCES Hospital(hospital_id) ON DELETE CASCADE
+    FOREIGN KEY (bank_id) REFERENCES Blood_Bank(bank_id) ON DELETE RESTRICT,
+    FOREIGN KEY (hospital_id) REFERENCES Hospital(hospital_id) ON DELETE RESTRICT
 );
 
 -- 4. Transactions
@@ -60,8 +62,8 @@ CREATE TABLE Donation (
     donation_date DATE DEFAULT (CURRENT_DATE),
     bank_id CHAR(10),
     -- SET NULL keeps the medical record even if the donor deletes their account
-    FOREIGN KEY (donor_id) REFERENCES Donor(donor_id) ON DELETE SET NULL,
-    FOREIGN KEY (bank_id) REFERENCES Blood_Bank(bank_id) ON DELETE CASCADE
+    FOREIGN KEY (donor_id) REFERENCES Donor(donor_id) ON DELETE RESTRICT,
+    FOREIGN KEY (bank_id) REFERENCES Blood_Bank(bank_id) ON DELETE RESTRICT
 );
 
 CREATE TABLE Blood_Stock (
@@ -71,8 +73,8 @@ CREATE TABLE Blood_Stock (
     units_available INT DEFAULT 0 CHECK (units_available >= 0),
     donation_id BIGINT,
     PRIMARY KEY(bank_id, stock_id),
-    FOREIGN KEY(bank_id) REFERENCES Blood_Bank(bank_id) ON DELETE CASCADE,
-    FOREIGN KEY(donation_id) REFERENCES Donation(donation_id) ON DELETE CASCADE
+    FOREIGN KEY(bank_id) REFERENCES Blood_Bank(bank_id) ON DELETE RESTRICT,
+    FOREIGN KEY(donation_id) REFERENCES Donation(donation_id) ON DELETE RESTRICT
 );
 
 -- 5. Requests & Issuance
@@ -84,7 +86,8 @@ CREATE TABLE Blood_Request_from_hospital (
     units_required INT CHECK (units_required > 0),
     blood_grp ENUM('A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'),
     priority INT DEFAULT 1,
-    FOREIGN KEY(hospital_id) REFERENCES Hospital(hospital_id) ON DELETE CASCADE
+    FOREIGN KEY(hospital_id) REFERENCES Hospital(hospital_id) ON DELETE RESTRICT
+
 );
 
 CREATE TABLE Requests_sent_to_BloodBanks (
@@ -92,8 +95,9 @@ CREATE TABLE Requests_sent_to_BloodBanks (
     bank_id CHAR(10),
     request_status ENUM('Approved','Processing','Rejected','Cancelled') DEFAULT 'Processing',
     PRIMARY KEY (request_id, bank_id),
-    FOREIGN KEY(request_id) REFERENCES Blood_Request_from_hospital(request_id) ON DELETE CASCADE,
-    FOREIGN KEY (bank_id) REFERENCES Blood_Bank(bank_id) ON DELETE CASCADE
+    FOREIGN KEY(request_id) REFERENCES Blood_Request_from_hospital(request_id) ON DELETE RESTRICT,
+    FOREIGN KEY (bank_id) REFERENCES Blood_Bank(bank_id) ON DELETE RESTRICT
+
 );
 
 CREATE TABLE Blood_issued_to_hospital (
@@ -105,5 +109,6 @@ CREATE TABLE Blood_issued_to_hospital (
     request_id BIGINT,
     -- RESTRICT prevents deleting a bank if it has an active issuance record
     FOREIGN KEY (bank_id) REFERENCES Blood_Bank(bank_id) ON DELETE RESTRICT,
-    FOREIGN KEY (request_id) REFERENCES Blood_Request_from_hospital(request_id) ON DELETE CASCADE
+    FOREIGN KEY (request_id) REFERENCES Blood_Request_from_hospital(request_id) ON DELETE RESTRICT
+
 );
