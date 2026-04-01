@@ -88,7 +88,7 @@ function App() {
       <select name="user_type" onChange={handleChange}>
         <option value="donor">Donor</option>
         <option value="hospital">Hospital</option>
-        <option value="blood_bank">blood_bank</option>
+        <option value="blood_bank">Blood Bank</option>
       </select>
 
       <br /><br />
