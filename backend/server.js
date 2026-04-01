@@ -7,7 +7,12 @@ const db=require('./config/db.js')
 const jwt=require('jsonwebtoken')
 const authRoutes=require('./Routes/authRoutes')
 
-app.use(cors())
+app.use(
+  cors({
+    origin: "http://localhost:5173", // your React app URL
+    credentials: true,
+  })
+);
 app.use(express.json())
 
 app.use('/api/auth',authRoutes)

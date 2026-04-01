@@ -13,7 +13,7 @@ CREATE TABLE User (
     CONSTRAINT chk_id_format CHECK (
         (user_id LIKE 'DNR%') OR 
         (user_id LIKE 'HSP%') OR 
-        (user_id LIKE 'BNK%') OR 
+        (user_id LIKE 'BNK%') OR  
         (user_id LIKE 'ADM%')
     )
 );
