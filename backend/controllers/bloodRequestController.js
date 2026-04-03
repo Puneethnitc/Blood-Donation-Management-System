@@ -2,26 +2,26 @@ const db = require("../config/db");
 
 exports.sendRequestToBanks = (req, res) => {
 
-  const { request_id, hospital_id, blood_grp, units_required, priority } = req.body;
+  const { hospital_id, blood_grp, units_required, priority } = req.body;
 
-  // 1️⃣ Insert request from hospital
   const insertRequest = `
   INSERT INTO Blood_Request_from_hospital
-  (request_id, hospital_id, blood_grp, units_required, priority)
-  VALUES (?, ?, ?, ?, ?)
+  (hospital_id, blood_grp, units_required, priority)
+  VALUES (?, ?, ?, ?)
   `;
 
   db.query(
     insertRequest,
-    [request_id, hospital_id, blood_grp, units_required, priority],
-    (err) => {
+    [hospital_id, blood_grp, units_required, priority || 1],
+    (err, result) => {
 
       if (err) {
         console.log(err);
-        return res.status(500).json({ message: "Error inserting request" });
-      }
+        return res.status(500).json({ message: "Error inserting request", error: err.message, sqlMessage: err.sqlMessage });
+       }
 
-      // 2️⃣ Find blood banks that have this blood group
+      const request_id = result.insertId;
+
       const findBanks = `
       SELECT DISTINCT bank_id
       FROM Blood_Stock
@@ -38,7 +38,6 @@ exports.sendRequestToBanks = (req, res) => {
           return res.json({ message: "No banks have this blood group" });
         }
 
-        // 3️⃣ Send request to each bank
         banks.forEach((bank) => {
 
           const sendRequest = `
