@@ -1,3 +1,4 @@
+const bloodRequestRoutes=require('./Routes/bloodRequestRoutes')
 require('dotenv').config()
 const express=require('express')
 const app=express()
@@ -16,13 +17,16 @@ app.use(
 app.use(express.json())
 
 app.use('/api/auth',authRoutes)
+app.use('/api/request',bloodRequestRoutes)
 
 app.get("/",(req,res)=>{
-    
+    res.send("Blood Donation Backend Running");
 })
 
 
 
-app.listen(process.env.PORT,()=>{
-    console.log(`Server runnnig on port ${process.env.PORT}`)
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT,()=>{
+    console.log(`Server running on port ${PORT}`)
 })
