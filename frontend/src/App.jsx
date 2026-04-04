@@ -20,6 +20,7 @@ function App() {
   <Route path="/setup/donor" element={<DonorSetup />} />
   <Route path="/setup/hospital" element={<HospitalSetup />} />
   <Route path="/setup/bloodbank" element={<BloodBankSetup />} />
+  <Route path="/dashboard" element={<DashboardRouter />} />
 </Route>
 
       </Routes>

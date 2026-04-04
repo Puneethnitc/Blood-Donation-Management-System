@@ -7,6 +7,7 @@ const db=require('./config/db.js')
 const jwt=require('jsonwebtoken')
 const authRoutes=require('./Routes/authRoutes')
 const donorRoutes=require("./Routes/donorRoutes.js")
+const profileStatusRoute=require("./Routes/profileStatusRoutes.js")
 app.use(
   cors({
     origin: "http://localhost:5173", // your React app URL
@@ -17,6 +18,7 @@ app.use(express.json())
 
 app.use('/api/auth',authRoutes)
 app.use('/api/',donorRoutes)
+app.use("/api/profile/status",profileStatusRoute)
 app.get("/",(req,res)=>{
     
 })
