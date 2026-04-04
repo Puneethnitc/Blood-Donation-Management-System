@@ -5,7 +5,7 @@ import ProtectedRoute from "./routes/ProtectedRoutes";
 import DonorSetup from "./pages/setup/DonorSetup";
 import HospitalSetup from "./pages/setup/HospitalSetup";
 import BloodBankSetup from "./pages/setup/BloodBankSetup";
-import DashboardLayout from "./layouts/DashboardLayout";
+import DashboardLayout from "./pages/Layouts/DashboardLayout";
 import DashboardRouter from "./pages/dashboard/DashboardRouter";
 function App() {
   return (
