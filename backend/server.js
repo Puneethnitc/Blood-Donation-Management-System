@@ -11,6 +11,7 @@ const bloodBankRoutes=require("./Routes/bloodBankRoutes.js")
 const hospitalRoutes=require("./Routes/hospitalRoutes.js")
 const profileSetupRoutes=require("./Routes/profileSetupRoutes.js")
 const profileStatusRoute=require("./Routes/profileStatusRoutes.js")
+
 app.use(
   cors({
     origin: "http://localhost:5173", // your React app URL
@@ -25,9 +26,6 @@ app.use('/api/donor',donorRoutes)
 app.use('/api/bloodbank',bloodBankRoutes)
 app.use('/api/hospital',hospitalRoutes)
 app.use("/api/profile/status",profileStatusRoute)
-app.get("/",(req,res)=>{
-    
-})
 
 app.get("/",(req,res) => {
   res.json(
