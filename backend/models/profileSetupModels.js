@@ -2,7 +2,7 @@ const db = require("../config/db");
 
 // DONOR
 const checkDonorExists = async (user_id) => {
-  const [rows] = await db.query(
+  const [rows] = await db.promise().query(
     "SELECT 1 FROM Donor WHERE donor_id = ?",
     [user_id]
   );
@@ -10,7 +10,7 @@ const checkDonorExists = async (user_id) => {
 };
 
 const insertDonor = async ({ user_id, blood_grp, dob }) => {
-  await db.query(
+  await db.promise().query(
     `INSERT INTO Donor (donor_id, blood_grp, dob)
      VALUES (?, ?, ?)`,
     [user_id, blood_grp, dob]
@@ -20,7 +20,7 @@ const insertDonor = async ({ user_id, blood_grp, dob }) => {
 
 // BLOOD BANK
 const checkBloodBankExists = async (user_id) => {
-  const [rows] = await db.query(
+  const [rows] = await db.promise().query(
     "SELECT 1 FROM Blood_Bank WHERE bank_id = ?",
     [user_id]
   );
@@ -28,14 +28,14 @@ const checkBloodBankExists = async (user_id) => {
 };
 
 const insertBloodBank = async ({ user_id, latitude, longitude }) => {
-  await db.query(
+  await db.promise().query(
     `INSERT INTO Blood_Bank (bank_id)
      VALUES (?)`,
     [user_id]
   );
 
   // Optional: Organization table
-  await db.query(
+  await db.promise().query(
     `INSERT INTO Organization (organization_id, latitude, longitude)
      VALUES (?, ?, ?)`,
     [user_id, latitude, longitude]
@@ -45,7 +45,7 @@ const insertBloodBank = async ({ user_id, latitude, longitude }) => {
 
 // HOSPITAL
 const checkHospitalExists = async (user_id) => {
-  const [rows] = await db.query(
+  const [rows] = await db.promise().query(
     "SELECT 1 FROM Hospital WHERE hospital_id = ?",
     [user_id]
   );
@@ -53,13 +53,13 @@ const checkHospitalExists = async (user_id) => {
 };
 
 const insertHospital = async ({ user_id, latitude, longitude }) => {
-  await db.query(
+  await db.promise().query(
     `INSERT INTO Hospital (hospital_id)
      VALUES (?)`,
     [user_id]
   );
 
-  await db.query(
+  await db.promise().query(
     `INSERT INTO Organization (organization_id, latitude, longitude)
      VALUES (?, ?, ?)`,
     [user_id, latitude, longitude]

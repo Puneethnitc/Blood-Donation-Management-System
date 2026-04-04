@@ -7,7 +7,7 @@ const {
 } = require("../models/bloodBankModels");
 
 const addDonationRoute = async (req, res) => {
-  const connection = await db.getConnection();
+  const connection = await db.promise().getConnection();
 
   try {
     const { donor_id, units, blood_grp } = req.body;
