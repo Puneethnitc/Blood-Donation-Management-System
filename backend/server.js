@@ -8,7 +8,7 @@ const jwt=require('jsonwebtoken')
 const authRoutes=require('./Routes/authRoutes')
 const donorRoutes=require("./Routes/donorRoutes.js")
 const bloodBankRoutes=require("./Routes/bloodBankRoutes.js")
-const hospitalRoutes=require("./Routes/hospitalRoutes.js")
+// const hospitalRoutes=require("./Routes/hospitalRoutes.js")
 const profileSetupRoutes=require("./Routes/profileSetupRoutes.js")
 const profileStatusRoute=require("./Routes/profileStatusRoutes.js")
 
@@ -25,7 +25,7 @@ app.use('/api/auth',authRoutes)
 app.use('/api/setup',profileSetupRoutes)
 app.use('/api/donor',donorRoutes)
 app.use('/api/bloodbank',bloodBankRoutes)
-app.use('/api/hospital',hospitalRoutes)
+// app.use('/api/hospital',hospitalRoutes)
 app.use("/api/profile/status",profileStatusRoute)
 
 app.get("/",(req,res) => {
