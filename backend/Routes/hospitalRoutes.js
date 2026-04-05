@@ -8,7 +8,7 @@ const {
     searchBanksRoute,
     sendRequestRoute,
     getHospitalRequestsRoute,
-    cancelRequestRoute,
+    cancelBankRequest,
     incomingRequestsRoute
 } = require("../controllers/hospitalControllers");
 
@@ -55,10 +55,10 @@ router.get(
 
 // Cancel Request
 router.put(
-    "/cancel/:request_id",
+    "/cancel",
     authMiddleWare,
     roleMiddleware("HSP"),
-    cancelRequestRoute
+    cancelBankRequest
 );
 
 

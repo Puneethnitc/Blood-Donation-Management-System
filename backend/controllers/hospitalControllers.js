@@ -108,28 +108,26 @@ const getHospitalRequestsRoute = async (req, res) => {
 
 
 // CANCEL REQUEST
-const cancelRequestRoute = async (req, res) => {
-    try {
+const cancelBankRequest = async (req,res)=>{
+    try{
 
-        const { request_id } = req.params;
+        const {request_id, bank_id} = req.body;
 
-        await BloodRequest.cancelRequest(request_id);
+        await BloodRequest.cancelBankRequest(request_id, bank_id);
 
-        return res.status(200).json({
-            message: "Request cancelled successfully",
-            success: true
-        });
+        res.json({
+            message:"Bank request cancelled",
+            success:true
+        })
 
-    } catch (err) {
-
-        console.log(err);
-
-        return res.status(500).json({
-            message: "Server error",
-            success: false
-        });
+    }catch(err){
+        console.log(err)
+        res.status(500).json({
+            message:"Server error",
+            success:false
+        })
     }
-};
+}
 
 
 
@@ -163,6 +161,6 @@ module.exports = {
     searchBanksRoute,
     sendRequestRoute,
     getHospitalRequestsRoute,
-    cancelRequestRoute,
+    cancelBankRequest,
     incomingRequestsRoute
 };

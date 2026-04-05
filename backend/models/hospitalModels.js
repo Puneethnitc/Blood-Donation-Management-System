@@ -33,7 +33,7 @@ const searchBanks = async (latitude, longitude, blood_grp, units_required) => {
         FROM Blood_Stock bs
         JOIN User u ON bs.bank_id = u.user_id
         JOIN Organization_Location ol ON bs.bank_id = ol.organisation_id
-        WHERE bs.blood_grp = ? AND u.user_type='bank'
+        WHERE bs.blood_grp = ? AND u.user_type='blood_bank'
         GROUP BY bs.bank_id
         HAVING SUM(bs.units_available) >= ?
         ORDER BY distance ASC
@@ -89,17 +89,17 @@ const getHospitalRequests = async (hospital_id) => {
 
 
 // cancel request
-const cancelRequest = async (request_id) => {
+const cancelBankRequest = async(request_id, bank_id)=>{
 
     const [result] = await db.promise().query(
-        `UPDATE Blood_Request_from_hospital
-         SET final_status='Cancelled'
-         WHERE request_id=?`,
-        [request_id]
-    );
+        `UPDATE Requests_sent_to_BloodBanks
+         SET request_status='Cancelled'
+         WHERE request_id=? AND bank_id=?`,
+        [request_id, bank_id]
+    )
 
-    return result;
-};
+    return result
+}
 
 
 // bank incoming requests
@@ -134,6 +134,6 @@ module.exports = {
     createRequest,
     sendRequestToBank,
     getHospitalRequests,
-    cancelRequest,
+    cancelBankRequest,
     getIncomingRequests
 };
