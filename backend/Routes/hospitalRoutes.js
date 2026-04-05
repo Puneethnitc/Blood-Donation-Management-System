@@ -28,14 +28,7 @@ router.get(
 
 
 // Search Blood Banks
-router.post(
-    "/search-banks",
-    authMiddleWare,
-    roleMiddleware("HSP"),
-    searchBanksRoute
-);
-
-
+router.get("/find-banks", authMiddleWare,roleMiddleware("HSP"), searchBanksRoute);
 // Send Blood Request
 router.post(
     "/send-request",
@@ -47,7 +40,7 @@ router.post(
 
 // View My Requests
 router.get(
-    "/my-requests",
+    "/requests",
     authMiddleWare,
     roleMiddleware("HSP"),
     getHospitalRequestsRoute

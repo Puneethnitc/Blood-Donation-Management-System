@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import API from "../../../api/axios";
 
 function BloodInventory() {
-  const [data, setData] = useState([]);
+  const [data, setData] = useState(null);
 
   useEffect(() => {
     const fetch = async () => {
@@ -12,11 +12,7 @@ function BloodInventory() {
     fetch();
   }, []);
 
-  const getStatus = (units) => {
-    if (units <= 2) return "CRITICAL";
-    if (units <= 5) return "LOW";
-    return "GOOD";
-  };
+  if (!data) return <p>Loading...</p>;
 
   return (
     <div>
@@ -25,8 +21,7 @@ function BloodInventory() {
       {data.map((item, i) => (
         <div key={i} style={card}>
           <h3>{item.blood_grp}</h3>
-          <p>{item.units} units</p>
-          <p>Status: {getStatus(item.units)}</p>
+          <p>{item.units || 0} units</p>
         </div>
       ))}
     </div>

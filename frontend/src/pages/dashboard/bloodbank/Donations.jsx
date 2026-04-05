@@ -16,10 +16,9 @@ function Donations() {
     <div>
       <h2>Donation Records</h2>
 
-      {data.map((d, i) => (
-        <div key={i} style={card}>
-          <p>{d.donor_name}</p>
-          <p>{d.blood_grp}</p>
+      {data.map((d) => (
+        <div key={d.donation_id} style={card}>
+          <p><b>{d.donor_name}</b></p>
           <p>{d.units} units</p>
           <p>{d.date}</p>
         </div>

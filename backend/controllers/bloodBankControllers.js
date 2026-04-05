@@ -1,13 +1,51 @@
-const db = require("../config/db");
-
 const {
   checkDonorExists,
+  checkDonorEligibility,
   insertDonation,
-  insertBloodStockWithLock
+  insertBloodStockWithLock,
+  getDashboardData,
+  getInventoryData,
+  getRequestData,
+  getDonationHistory
 } = require("../models/bloodBankModels");
 
+const checkDonorRoute = async (req, res) => {
+  try {
+    const { donor_id } = req.params;
+
+    const conn = await db.getConnection();
+
+    const exists = await checkDonorExists(conn, donor_id);
+
+    if (!exists) {
+      conn.release();
+      return res.status(404).json({
+        message: "Donor not found",
+        success: false
+      });
+    }
+
+    const eligibility = await checkDonorEligibility(conn, donor_id);
+
+    conn.release();
+
+    return res.json({
+      success: true,
+      eligible: eligibility.eligible,
+      days_left: eligibility.days_left || 0
+    });
+
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      message: "Server error",
+      success: false
+    });
+  }
+};
+
 const addDonationRoute = async (req, res) => {
-  const connection = await db.promise().getConnection();
+  const connection = await db.getConnection();
 
   try {
     const { donor_id, units, blood_grp } = req.body;
@@ -15,7 +53,7 @@ const addDonationRoute = async (req, res) => {
 
     await connection.beginTransaction();
 
-    // 1. Check donor
+    // 1️⃣ Check donor exists
     const exists = await checkDonorExists(connection, donor_id);
     if (!exists) {
       await connection.rollback();
@@ -25,25 +63,36 @@ const addDonationRoute = async (req, res) => {
       });
     }
 
-    // 2. Insert donation
+    // 2️⃣ Check eligibility
+    const eligibility = await checkDonorEligibility(connection, donor_id);
+
+    if (!eligibility.eligible) {
+      await connection.rollback();
+      return res.status(400).json({
+        message: `Donor not eligible. Try after ${eligibility.days_left} days`,
+        success: false
+      });
+    }
+
+    // 3️⃣ Insert donation
     const donation_id = await insertDonation(connection, {
       donor_id,
       units_donated: units,
       bank_id
     });
 
-    // 3. Insert stock (MAX+1+LOCK)
+    // 4️⃣ Insert stock
     await insertBloodStockWithLock(connection, {
       bank_id,
       blood_grp,
-      units,
+      units_available: units,
       donation_id
     });
 
     await connection.commit();
 
     return res.status(201).json({
-      message: "Donation stored successfully",
+      message: "Donation successful",
       success: true
     });
 
@@ -60,7 +109,66 @@ const addDonationRoute = async (req, res) => {
     connection.release();
   }
 };
+const getBloodBankDashboard = async (req, res) => {
+  try {
+    const bank_id = req.user.user_id;
 
+    const data = await getDashboardData(bank_id);
+
+    res.json({
+      success: true,
+      ...data
+    });
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+const getInventory = async (req, res) => {
+  try {
+    const bank_id = req.user.user_id;
+
+    const data = await getInventoryData(bank_id);
+
+    res.json(data);
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+const getRequests = async (req, res) => {
+  try {
+    const bank_id = req.user.user_id;
+
+    const data = await getRequestData(bank_id);
+
+    res.json(data);
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+const getDonations = async (req, res) => {
+  try {
+    const bank_id = req.user.user_id;
+
+    const data = await getDonationHistory(bank_id);
+
+    res.json(data);
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
 module.exports = {
-  addDonationRoute
+  checkDonorRoute,
+  addDonationRoute,
+  getBloodBankDashboard,
+  getInventory,
+  getRequests,
+  getDonations
 };

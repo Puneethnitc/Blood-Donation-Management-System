@@ -21,13 +21,16 @@ export function AuthProvider({ children }) {
   const logout = () => {
     setToken(null);
     setRole(null);
+    setHasBloodBank(false);
 
     localStorage.removeItem("token");
     localStorage.removeItem("role");
+    localStorage.removeItem("hasBloodBank");
   };
 
   return (
-    <AuthContext.Provider value={{ token, role, login, logout }}>
+    // <AuthContext.Provider value={{ token, role, login, logout }}>
+    <AuthContext.Provider value={{ token, role, hasBloodBank, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

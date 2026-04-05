@@ -3,26 +3,26 @@ import { useAuth } from "../../context/AuthContext";
 import DonorHome from "./donor/DonorHome";
 import BloodBankHome from "./bloodbank/BloodBankHome";
 import HospitalHome from "./hospital/HospitalHome";
-
 function DashboardRouter() {
   const { role, hasBloodBank } = useAuth();
 
-  // 🧑 DONOR
+  // 🔥 WAIT until auth loads
+  if (!role) {
+    return <p>Loading...</p>;
+  }
+
   if (role === "donor") {
     return <DonorHome />;
   }
 
-  // 🏥 HOSPITAL WITHOUT BANK
-  if (role === "hospital" && !hasBloodBank) {
+  if (role === "hospital" && hasBloodBank === false) {
     return <HospitalHome />;
   }
 
-  // 🏥 HOSPITAL WITH BANK (acts like blood bank)
-  if (role === "hospital" && hasBloodBank) {
+  if (role === "hospital" && hasBloodBank === true) {
     return <BloodBankHome />;
   }
 
-  // 🩸 BLOOD BANK
   if (role === "blood_bank") {
     return <BloodBankHome />;
   }

@@ -27,43 +27,37 @@ function Login() {
         try {
             // 1. login
             const res = await API.post("/auth/login", form);
-            const token = res.data.token;
 
-            // 2. store token (important for next API call)
+            const {
+                token,
+                user_type,
+                profile_complete,
+                has_blood_bank
+            } = res.data;
+            console.log(res.data)
+            // store token
             localStorage.setItem("token", token);
 
-            // 3. call YOUR profile status API
-            const profileRes = await API.get("/profile/status");
+            // store in context
+            login(token, user_type, has_blood_bank);
 
-            const { user_type, profile_complete } = profileRes.data;
-
-            // 4. store in context
-            login(token, user_type);
-
-            // 🔥 5. DECIDE FLOW
+            // 🔥 DECISION LOGIC
 
             if (!profile_complete) {
-                // first login → setup
                 if (user_type === "donor") {
                     navigate("/setup/donor");
-                } else if (user_type === "hospital") {
+                }
+                else if (user_type === "hospital") {
                     navigate("/setup/hospital");
-                } else if (user_type === "blood_bank") {
+                }
+                else if (user_type === "blood_bank") {
                     navigate("/setup/bloodbank");
                 }
-            } else {
-                // existing user → dashboard
-                if (user_type === "donor") {
-                    navigate("/dashboard");
-                } else if (user_type === "hospital") {
-                    navigate("/dashboard");
-                } else if (user_type === "blood_bank") {
-                    navigate("/dashboard");
-                } else if (user_type === "admin") {
-                    navigate("/dashboard");
-                }
             }
-
+            else {
+                // ALL go to same dashboard (router decides role)
+                navigate("/dashboard");
+            }
         } catch (err) {
             console.error(err);
             alert("Login failed");

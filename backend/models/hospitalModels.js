@@ -16,34 +16,33 @@ const getHospitalLocation = async (hospital_id) => {
 
 // search banks
 const searchBanks = async (latitude, longitude, blood_grp, units_required) => {
+  const [rows] = await db.promise().query(
+    `
+    SELECT 
+        bs.bank_id,
+        u.name AS bank_name,
+        SUM(bs.units_available) AS units_available,
+        (6371 * ACOS(
+            COS(RADIANS(?)) *
+            COS(RADIANS(ol.latitude)) *
+            COS(RADIANS(ol.longitude) - RADIANS(?)) +
+            SIN(RADIANS(?)) *
+            SIN(RADIANS(ol.latitude))
+        )) AS distance
+    FROM Blood_Stock bs
+    JOIN User u ON bs.bank_id = u.user_id
+    JOIN Organization_Location ol ON bs.bank_id = ol.organisation_id
+    WHERE bs.blood_grp = ? 
+      AND u.user_type = 'blood_bank'
+    GROUP BY bs.bank_id
+    HAVING SUM(bs.units_available) >= ?
+    ORDER BY distance ASC
+    `,
+    [latitude, longitude, latitude, blood_grp, units_required]
+  );
 
-    const [rows] = await db.promise().query(
-        `
-        SELECT 
-            bs.bank_id,
-            u.name AS bank_name,
-            SUM(bs.units_available) AS units_available,
-            (6371 * ACOS(
-                COS(RADIANS(?)) *
-                COS(RADIANS(ol.latitude)) *
-                COS(RADIANS(ol.longitude) - RADIANS(?)) +
-                SIN(RADIANS(?)) *
-                SIN(RADIANS(ol.latitude))
-            )) AS distance
-        FROM Blood_Stock bs
-        JOIN User u ON bs.bank_id = u.user_id
-        JOIN Organization_Location ol ON bs.bank_id = ol.organisation_id
-        WHERE bs.blood_grp = ? AND u.user_type='bank'
-        GROUP BY bs.bank_id
-        HAVING SUM(bs.units_available) >= ?
-        ORDER BY distance ASC
-        `,
-        [latitude, longitude, latitude, blood_grp, units_required]
-    );
-
-    return rows;
+  return rows;
 };
-
 
 // create request
 const createRequest = async (hospital_id, blood_grp, units_required, priority) => {
@@ -75,19 +74,30 @@ const sendRequestToBank = async (request_id, bank_id) => {
 
 // get hospital requests
 const getHospitalRequests = async (hospital_id) => {
+  const [rows] = await db.promise().query(
+    `
+    SELECT 
+      r.request_id,
+      r.blood_grp,
+      r.units_required,
+      r.final_status,
+      r.requested_date,
+      rs.bank_id,
+      rs.request_status,
+      u.name AS bank_name
+    FROM Blood_Request_from_hospital r
+    JOIN Requests_sent_to_BloodBanks rs 
+      ON r.request_id = rs.request_id
+    JOIN User u 
+      ON rs.bank_id = u.user_id
+    WHERE r.hospital_id = ?
+    ORDER BY r.requested_date DESC
+    `,
+    [hospital_id]
+  );
 
-    const [rows] = await db.promise().query(
-        `SELECT *
-         FROM Blood_Request_from_hospital
-         WHERE hospital_id = ?
-         ORDER BY requested_date DESC`,
-        [hospital_id]
-    );
-
-    return rows;
+  return rows;
 };
-
-
 // cancel request
 const cancelRequest = async (request_id) => {
 
