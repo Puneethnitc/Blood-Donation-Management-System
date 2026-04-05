@@ -3,9 +3,12 @@ const db = require("../config/db");
 const {
   checkDonorExists,
   insertDonation,
-  insertBloodStockWithLock
+  insertBloodStockWithLock,
+  getDashboardData,
+  getInventoryData
 } = require("../models/bloodBankModels");
 
+// ADD DONATION
 const addDonationRoute = async (req, res) => {
   const connection = await db.promise().getConnection();
 
@@ -13,9 +16,15 @@ const addDonationRoute = async (req, res) => {
     const { donor_id, units, blood_grp } = req.body;
     const bank_id = req.user.user_id;
 
+    if (!donor_id || !units || !blood_grp) {
+      return res.status(400).json({
+        message: "Missing required fields",
+        success: false
+      });
+    }
+
     await connection.beginTransaction();
 
-    // 1. Check donor
     const exists = await checkDonorExists(connection, donor_id);
     if (!exists) {
       await connection.rollback();
@@ -25,18 +34,16 @@ const addDonationRoute = async (req, res) => {
       });
     }
 
-    // 2. Insert donation
     const donation_id = await insertDonation(connection, {
       donor_id,
       units_donated: units,
       bank_id
     });
 
-    // 3. Insert stock (MAX+1+LOCK)
     await insertBloodStockWithLock(connection, {
       bank_id,
       blood_grp,
-      units,
+      units_available: units,
       donation_id
     });
 
@@ -61,6 +68,52 @@ const addDonationRoute = async (req, res) => {
   }
 };
 
+// DASHBOARD
+const getDashboard = async (req, res) => {
+  try {
+    const bank_id = req.user.user_id;
+
+    const data = await getDashboardData(bank_id);
+
+    return res.status(200).json({
+      message: "Dashboard data fetched",
+      success: true,
+      data
+    });
+
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      message: "Server error",
+      success: false
+    });
+  }
+};
+
+// INVENTORY
+const getInventory = async (req, res) => {
+  try {
+    const bank_id = req.user.user_id;
+
+    const inventory = await getInventoryData(bank_id);
+
+    return res.status(200).json({
+      message: "Inventory fetched",
+      success: true,
+      inventory
+    });
+
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      message: "Server error",
+      success: false
+    });
+  }
+};
+
 module.exports = {
-  addDonationRoute
+  addDonationRoute,
+  getDashboard,
+  getInventory
 };
