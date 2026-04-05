@@ -47,8 +47,8 @@ const searchBanksRoute = async (req, res) => {
 // SEND REQUEST
 const sendRequestRoute = async (req, res) => {
     try {
-
-        const { hospital_id, blood_grp, units_required, priority, selected_banks } = req.body;
+        const { blood_grp, units_required, priority, selected_banks } = req.body;
+        const hospital_id = req.user.user_id; // <-- fix
 
         const result = await BloodRequest.createRequest(
             hospital_id,
@@ -61,11 +61,9 @@ const sendRequestRoute = async (req, res) => {
 
         // send request to selected banks
         if (selected_banks && selected_banks.length) {
-
             for (const bank_id of selected_banks) {
                 await BloodRequest.sendRequestToBank(request_id, bank_id);
             }
-
         }
 
         return res.status(200).json({
@@ -75,9 +73,7 @@ const sendRequestRoute = async (req, res) => {
         });
 
     } catch (err) {
-
         console.log(err);
-
         return res.status(500).json({
             message: "Server error",
             success: false
@@ -88,7 +84,6 @@ const sendRequestRoute = async (req, res) => {
 
 
 // GET HOSPITAL REQUESTS
-// controllers/hospitalControllers.js
 const getHospitalRequestsRoute = async (req, res) => {
   try {
     const hospital_id = req.user.user_id; // <- from JWT
