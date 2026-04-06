@@ -1,4 +1,5 @@
 const db = require("../config/db");
+const { v4: uuidv4 } = require("uuid");
 
 // 🔍 CHECK DONOR EXISTS
 const checkDonorExists = async (conn, donor_id) => {
@@ -6,9 +7,19 @@ const checkDonorExists = async (conn, donor_id) => {
     "SELECT donor_id FROM Donor WHERE donor_id = ?",
     [donor_id]
   );
-
+  console.log(rows);
   return rows.length > 0;
 };
+
+const checkDonorExistsWithBloodGrp = async (conn, {donor_id, blood_grp}) => {
+  const [rows] = await conn.query(
+    "SELECT donor_id FROM Donor WHERE donor_id = ? AND blood_grp = ?",
+    [donor_id, blood_grp]
+  );
+  console.log(rows);
+  return rows.length > 0;
+};
+
 
 // 🔍 CHECK ELIGIBILITY
 const checkDonorEligibility = async (conn, donor_id) => {
@@ -57,7 +68,7 @@ const insertDonation = async (conn, { donor_id, units_donated, bank_id }) => {
 // 🔒 STOCK INSERT (SAFE)
 const insertBloodStockWithLock = async (
   conn,
-  { bank_id, blood_grp, units_available, donation_id }
+  { bank_id, blood_grp, units_available }
 ) => {
   const [rows] = await conn.query(
     `
@@ -74,14 +85,14 @@ const insertBloodStockWithLock = async (
   await conn.query(
     `
     INSERT INTO Blood_Stock
-    (stock_id, bank_id, blood_grp, units_available, donation_id)
-    VALUES (?, ?, ?, ?, ?)
+    (stock_id, bank_id, blood_grp, units_available, collection_dt)
+    VALUES (?, ?, ?, ?, CURDATE())
     `,
-    [nextStockId, bank_id, blood_grp, units_available, donation_id]
+    [nextStockId, bank_id, blood_grp, units_available]
   );
 };
 const getDashboardData = async (bank_id) => {
-  const conn = await db.promise();
+  const conn = db.promise();
 
   // total units
   const [total] = await conn.query(
@@ -126,20 +137,28 @@ const getDashboardData = async (bank_id) => {
   };
 };
 const getInventoryData = async (bank_id) => {
-  const conn = await db.promise();
+  const conn = db.promise();
 
-  const [rows] = await conn.query(
+  const [summary] = await conn.query(
     `SELECT blood_grp, SUM(units_available) AS units
      FROM Blood_Stock
      WHERE bank_id = ?
-     GROUP BY blood_grp`,
+     GROUP BY blood_grp
+     ORDER BY blood_grp`,
+    [bank_id]
+  );
+  const [entries] = await conn.query(
+    `SELECT stock_id, bank_id, blood_grp, units_available, collection_dt
+     FROM Blood_Stock
+     WHERE bank_id = ?
+     ORDER BY collection_dt ASC, stock_id ASC`,
     [bank_id]
   );
 
-  return rows;
+  return { summary, entries };
 };
 const getRequestData = async (bank_id) => {
-  const conn = await db.promise();
+  const conn = db.promise();
 
   const [rows] = await conn.query(
     `
@@ -163,7 +182,7 @@ const getRequestData = async (bank_id) => {
   return rows;
 };
 const getDonationHistory = async (bank_id) => {
-  const conn = await db.promise();
+  const conn = db.promise();
 
   const [rows] = await conn.query(
     `
@@ -182,13 +201,206 @@ const getDonationHistory = async (bank_id) => {
 
   return rows;
 };
+
+const fulfillRequest = async (conn, {request_id, bank_id}) => {
+  const [requestRows] = await conn.query(
+    `SELECT r.request_id, r.hospital_id, r.blood_grp, r.units_required, r.final_status
+     FROM Blood_Request_from_hospital r
+     JOIN Requests_sent_to_BloodBanks rs ON rs.request_id = r.request_id
+     WHERE r.request_id = ? AND rs.bank_id = ? AND rs.request_status = 'Processing'
+     FOR UPDATE`,
+    [request_id, bank_id]
+  );
+
+  if (!requestRows.length) {
+    return { success: false, message: "Request not found or already processed." };
+  }
+
+  const request = requestRows[0];
+  if (request.final_status !== "Processing") {
+    return { success: false, message: "Request is no longer pending." };
+  }
+
+  const [stockRows] = await conn.query(
+    `SELECT stock_id, bank_id, units_available
+     FROM Blood_Stock
+     WHERE bank_id = ? AND blood_grp = ? AND units_available > 0
+     ORDER BY collection_dt ASC, stock_id ASC
+     FOR UPDATE`,
+    [bank_id, request.blood_grp]
+  );
+
+  let needed = Number(request.units_required);
+  let total = 0;
+  const deductions = [];
+  for (const stock of stockRows) {
+    if (needed <= 0) break;
+    total += Number(stock.units_available);
+    const use = Math.min(needed, Number(stock.units_available));
+    deductions.push({ stock_id: stock.stock_id, bank_id: stock.bank_id, units: use });
+    needed -= use;
+  }
+  if (needed > 0) {
+    return {
+      success: false,
+      message: `Insufficient stock for ${request.blood_grp}. Available: ${total} units.`
+    };
+  }
+
+  for (const d of deductions) {
+    await conn.query(
+      `UPDATE Blood_Stock
+       SET units_available = units_available - ?
+       WHERE stock_id = ? AND bank_id = ?`,
+      [d.units, d.stock_id, d.bank_id]
+    );
+  }
+
+  await conn.query(
+    `UPDATE Requests_sent_to_BloodBanks
+     SET request_status = 'Approved'
+     WHERE request_id = ? AND bank_id = ?`,
+    [request_id, bank_id]
+  );
+  await conn.query(
+    `UPDATE Requests_sent_to_BloodBanks
+     SET request_status = 'Cancelled'
+     WHERE request_id = ? AND bank_id <> ?`,
+    [request_id, bank_id]
+  );
+  await conn.query(
+    `UPDATE Blood_Request_from_hospital
+     SET final_status = 'Approved'
+     WHERE request_id = ?`,
+    [request_id]
+  );
+  await conn.query(
+    `INSERT INTO Blood_issued_to_hospital
+      (issued_id, bank_id, blood_grp, units_issued, issued_date, request_id)
+     VALUES (?,?, ?, ?, CURDATE(), ?)`,
+    [uuidv4(), bank_id,request.blood_grp, request.units_required, request_id]
+  );
+
+  return { success: true, message: "Request fulfilled successfully." };
+};
+
+const rejectRequest = async (conn, {request_id, bank_id}) => {
+  const [requestRows] = await conn.query(
+    `SELECT r.request_id, r.hospital_id, r.blood_grp, r.units_required, r.final_status
+     FROM Blood_Request_from_hospital r
+     JOIN Requests_sent_to_BloodBanks rs ON rs.request_id = r.request_id
+     WHERE r.request_id = ? AND rs.bank_id = ? AND rs.request_status = 'Processing'
+     FOR UPDATE`,
+    [request_id, bank_id]
+  );
+  if (!requestRows.length) {
+    return { success: false, message: "Request not found or already processed." };
+  }
+  const request = requestRows[0];
+
+  await conn.query(
+    `UPDATE Requests_sent_to_BloodBanks
+     SET request_status = 'Rejected'
+     WHERE request_id = ? AND bank_id = ?`,
+    [request_id, bank_id]
+  );
+
+  const [statusRows] = await conn.query(
+    `SELECT request_status
+     FROM Requests_sent_to_BloodBanks
+     WHERE request_id = ?`,
+    [request_id]
+  );
+
+  const allRejected = statusRows.length > 0 && statusRows.every((r) => r.request_status === "Rejected");
+
+  if (allRejected) {
+    await conn.query(
+      `UPDATE Blood_Request_from_hospital
+       SET final_status = 'Cancelled'
+       WHERE request_id = ? AND final_status = 'Pending'`,
+      [request_id]
+    );
+    return { success: true, message: "Request rejected. All banks have now rejected this request." };
+  }
+
+  return { success: true, message: "Request rejected." };
+};
+
+const adjustStock = async (bank_id, stock_id, adjustment) => {
+  const [currentRows] = await db.promise().query(
+    `SELECT stock_id, bank_id, blood_grp, units_available, collection_dt
+     FROM Blood_Stock
+     WHERE bank_id = ? AND stock_id = ?`,
+    [bank_id, stock_id]
+  );
+  if (!currentRows.length) return null;
+  const current = currentRows[0];
+  const nextUnits = Math.max(0, Number(current.units_available) + Number(adjustment));
+  await db.promise().query(
+    `UPDATE Blood_Stock SET units_available = ? WHERE bank_id = ? AND stock_id = ?`,
+    [nextUnits, bank_id, stock_id]
+  );
+  return { ...current, units_available: nextUnits };
+};
+
+const writeOffStock = async (bank_id, stock_id) => {
+  const [result] = await db.promise().query(
+    `UPDATE Blood_Stock SET units_available = 0 WHERE bank_id = ? AND stock_id = ?`,
+    [bank_id, stock_id]
+  );
+  return result.affectedRows > 0;
+};
+
+const useOwnStock = async (conn, bank_id, hospital_id, blood_grp, units, reason = "internal_use") => {
+  const [stockRows] = await conn.query(
+    `SELECT stock_id, bank_id, units_available
+     FROM Blood_Stock
+     WHERE bank_id = ? AND blood_grp = ? AND units_available > 0
+     ORDER BY collection_dt ASC, stock_id ASC
+     FOR UPDATE`,
+    [bank_id, blood_grp]
+  );
+  let needed = Number(units);
+  let total = 0;
+  const deductions = [];
+  for (const stock of stockRows) {
+    if (needed <= 0) break;
+    total += Number(stock.units_available);
+    const use = Math.min(needed, Number(stock.units_available));
+    deductions.push({ stock_id: stock.stock_id, bank_id: stock.bank_id, units: use });
+    needed -= use;
+  }
+  if (needed > 0) {
+    return { success: false, message: `Insufficient stock for ${blood_grp}. Available: ${total} units.` };
+  }
+  for (const d of deductions) {
+    await conn.query(
+      `UPDATE Blood_Stock SET units_available = units_available - ? WHERE stock_id = ? AND bank_id = ?`,
+      [d.units, d.stock_id, d.bank_id]
+    );
+  }
+  await conn.query(
+    `INSERT INTO Blood_Issued_to_Hospital
+      (issued_id, bank_id, hospital_id, blood_grp, units_issued, issued_date, request_id)
+     VALUES (?, ?, ?, ?, ?, CURDATE(), NULL)`,
+    [uuidv4(), bank_id, hospital_id, blood_grp, units]
+  );
+  return { success: true, message: `Stock used for ${reason}` };
+};
 module.exports = {
   checkDonorExists,
   checkDonorEligibility,
+  checkDonorExistsWithBloodGrp,
   insertDonation,
   insertBloodStockWithLock,
   getDashboardData,
   getInventoryData,
   getRequestData,
-  getDonationHistory
+  getDonationHistory,
+  fulfillRequest,
+  rejectRequest,
+  adjustStock,
+  writeOffStock,
+  useOwnStock
 };

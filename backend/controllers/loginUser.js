@@ -25,6 +25,7 @@ const loginUser = async (req, res) => {
     // 🔥 check if profile complete
     let profile_complete = false;
     let has_blood_bank = false;
+    let bank_id = null;
 
     if (user_type === "donor") {
       const [rows] = await db.promise().query(
@@ -42,10 +43,11 @@ const loginUser = async (req, res) => {
       profile_complete = rows.length > 0;
 
       const [bank] = await db.promise().query(
-        "SELECT * FROM Owns WHERE hospital_id = ?",
+        "SELECT bank_id FROM Owns WHERE hospital_id = ?",
         [user.user_id]
       );
       has_blood_bank = bank.length > 0;
+      bank_id = bank[0]?.bank_id || null;
     }
 
     if (user_type === "blood_bank") {
@@ -59,8 +61,8 @@ const loginUser = async (req, res) => {
 
     // 🔥 generate token
     const token = jwt.sign(
-      { user_id: user.user_id },
-      "secret21",
+      { user_id: user.user_id, bank_id },
+      process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
 
@@ -72,6 +74,7 @@ const loginUser = async (req, res) => {
       user_type,
       profile_complete,
       has_blood_bank,
+      bank_id,
       success: true
     });
 

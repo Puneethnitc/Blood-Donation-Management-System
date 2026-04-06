@@ -5,25 +5,20 @@ const authMiddleWare = require("../middleware/authMiddleWare");
 const roleMiddleware = require("../middleware/roleMiddleWare");
 
 const {
-    searchBanksRoute,
-    sendRequestRoute,
-    getHospitalRequestsRoute,
-    cancelRequestRoute,
-    incomingRequestsRoute
+  searchBanksRoute,
+  sendRequestRoute,
+  getHospitalRequestsRoute,
+  cancelRequestRoute,
+  incomingRequestsRoute,
+  getHospitalDashboardRoute
 } = require("../controllers/hospitalControllers");
 
 
-// Dashboard (optional test route)
 router.get(
-    "/dashboard",
-    authMiddleWare,
-    roleMiddleware("HSP"),
-    (req, res) => {
-        res.json({
-            message: "Hospital dashboard working",
-            success: true
-        });
-    }
+  "/dashboard",
+  authMiddleWare,
+  roleMiddleware("HSP"),
+  getHospitalDashboardRoute
 );
 
 

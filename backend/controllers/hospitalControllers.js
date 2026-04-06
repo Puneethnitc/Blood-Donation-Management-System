@@ -1,12 +1,16 @@
 const {
-    getHospitalLocation,
-    searchBanks,
-    createRequest,
-    sendRequestToBank,
-    getHospitalRequests,
-    cancelRequest,
-    getIncomingRequests
+  getHospitalLocation,
+  searchBanks,
+  createRequest,
+  sendRequestToBank,
+  getHospitalRequests,
+  getRequestById,
+  cancelRequest,
+  getIncomingRequests,
+  getHospitalDashboardStats
 } = require("../models/hospitalModels");
+const { v4: uuidv4 } = require("uuid");
+const db = require("../config/db");
 
 
 // SEARCH BANKS
@@ -16,7 +20,7 @@ const searchBanksRoute = async (req, res) => {
 
     const { blood_grp, units_required } = req.query;
 
-    const location = await BloodRequest.getHospitalLocation(hospital_id);
+    const location = await getHospitalLocation(hospital_id);
 
     if (!location.length) {
       return res.status(404).json({
@@ -27,7 +31,8 @@ const searchBanksRoute = async (req, res) => {
 
     const { latitude, longitude } = location[0];
 
-    const banks = await BloodRequest.searchBanks(
+    const banks = await searchBanks(
+      hospital_id,
       latitude,
       longitude,
       blood_grp,
@@ -51,36 +56,46 @@ const searchBanksRoute = async (req, res) => {
 
 // SEND REQUEST
 const sendRequestRoute = async (req, res) => {
+    let conn;
     try {
 
-        const { hospital_id, blood_grp, units_required, priority, selected_banks } = req.body;
-
-        const result = await BloodRequest.createRequest(
-            hospital_id,
-            blood_grp,
-            units_required,
-            priority || 1
-        );
-
-        const request_id = result.insertId;
-
-        // send request to selected banks
-        if (selected_banks && selected_banks.length) {
-
-            for (const bank_id of selected_banks) {
-                await BloodRequest.sendRequestToBank(request_id, bank_id);
-            }
-
+        const hospital_id = req.user.user_id;
+        const { blood_grp, units_required, priority, selected_banks } = req.body;
+        const request_id = uuidv4();
+        if (!Array.isArray(selected_banks) || selected_banks.length === 0) {
+          return res.status(400).json({ message: "Select at least one bank", success: false });
         }
+        conn = await db.promise().getConnection();
+        await conn.beginTransaction();
+        await createRequest(
+          conn,
+          request_id,
+          hospital_id,
+          blood_grp,
+          units_required,
+          priority || 1
+        );
+        for (const bank_id of selected_banks) {
+          await sendRequestToBank(conn, request_id, bank_id);
+        }
+        await conn.commit();
+        conn.release();
 
         return res.status(200).json({
             message: "Request sent successfully",
             request_id,
-            success: true
+            success: true,
+            notification: {
+              type: "success",
+              text: "Blood request sent successfully"
+            }
         });
 
     } catch (err) {
-
+        if (conn) {
+          await conn.rollback();
+          conn.release();
+        }
         console.log(err);
 
         return res.status(500).json({
@@ -130,25 +145,48 @@ const getHospitalRequestsRoute = async (req, res) => {
   }
 };
 
-module.exports = {
-  getHospitalRequestsRoute
-};
-
 // CANCEL REQUEST
 const cancelRequestRoute = async (req, res) => {
+    let conn;
     try {
 
         const { request_id } = req.params;
-
-        await BloodRequest.cancelRequest(request_id);
+        conn = await db.promise().getConnection();
+        await conn.beginTransaction();
+        const request = await getRequestById(conn, request_id);
+        if (!request) {
+          await conn.rollback();
+          conn.release();
+          return res.status(404).json({ success: false, message: "Request not found" });
+        }
+        if (request.hospital_id !== req.user.user_id) {
+          await conn.rollback();
+          conn.release();
+          return res.status(403).json({ success: false, message: "Cannot cancel another hospital request" });
+        }
+        if (request.final_status !== "Pending") {
+          await conn.rollback();
+          conn.release();
+          return res.status(400).json({ success: false, message: "Only pending requests can be cancelled" });
+        }
+        await cancelRequest(conn, request_id);
+        await conn.commit();
+        conn.release();
 
         return res.status(200).json({
             message: "Request cancelled successfully",
-            success: true
+            success: true,
+            notification: {
+              type: "warning",
+              text: "Request cancelled successfully"
+            }
         });
 
     } catch (err) {
-
+        if (conn) {
+          await conn.rollback();
+          conn.release();
+        }
         console.log(err);
 
         return res.status(500).json({
@@ -165,8 +203,7 @@ const incomingRequestsRoute = async (req, res) => {
     try {
 
         const { bank_id } = req.params;
-
-        const requests = await BloodRequest.getIncomingRequests(bank_id);
+        const requests = await getIncomingRequests(bank_id);
 
         return res.status(200).json({
             message: "Incoming requests fetched",
@@ -185,11 +222,23 @@ const incomingRequestsRoute = async (req, res) => {
     }
 };
 
+const getHospitalDashboardRoute = async (req, res) => {
+  try {
+    const hospital_id = req.user.user_id;
+    const stats = await getHospitalDashboardStats(hospital_id);
+    return res.status(200).json({ success: true, ...stats });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
 
 module.exports = {
-    searchBanksRoute,
-    sendRequestRoute,
-    getHospitalRequestsRoute,
-    cancelRequestRoute,
-    incomingRequestsRoute
+  searchBanksRoute,
+  sendRequestRoute,
+  getHospitalRequestsRoute,
+  cancelRequestRoute,
+  incomingRequestsRoute,
+  getHospitalDashboardRoute
 };

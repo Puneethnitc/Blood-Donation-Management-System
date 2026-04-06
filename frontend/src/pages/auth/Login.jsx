@@ -2,14 +2,21 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import API from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
+import { useToast } from "../../context/ToastContext";
+import Card from "../../ui/Card";
+import Input from "../../ui/Input";
+import Button from "../../ui/Button";
 
 function Login() {
     const [form, setForm] = useState({
         identifier: "",
         password: ""
     });
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
 
     const { login } = useAuth();
+    const { showToast } = useToast();
     const navigate = useNavigate();
 
     const handleChange = (e) => {
@@ -25,6 +32,8 @@ function Login() {
         e.preventDefault();
 
         try {
+            setLoading(true);
+            setError("");
             // 1. login
             const res = await API.post("/auth/login", form);
 
@@ -32,14 +41,15 @@ function Login() {
                 token,
                 user_type,
                 profile_complete,
-                has_blood_bank
+                has_blood_bank,
+                bank_id
             } = res.data;
             console.log(res.data)
             // store token
             localStorage.setItem("token", token);
 
             // store in context
-            login(token, user_type, has_blood_bank);
+            login(token, user_type, has_blood_bank, bank_id);
 
             // 🔥 DECISION LOGIC
 
@@ -60,39 +70,55 @@ function Login() {
             }
         } catch (err) {
             console.error(err);
-            alert("Login failed");
+            setError(err.response?.data?.message || "Login failed");
+            showToast("error", "Login failed");
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
-        <div style={{ maxWidth: "400px", margin: "100px auto" }}>
-            <h2>Login</h2>
+        <div className="auth-page">
+            <Card className="auth-card">
+                <h2 style={{ marginBottom: 12 }}>Login</h2>
+                {error ? <p style={{ color: "var(--color-error)", marginBottom: 12 }}>{error}</p> : null}
 
-            <form onSubmit={handleSubmit}>
-                <input
-                    type="text"
-                    name="identifier"
-                    placeholder="Email or User ID"
-                    value={form.identifier}
-                    onChange={handleChange}
-                    required
-                />
+                <form onSubmit={handleSubmit} className="form">
+                    <Input
+                        label="Email or User ID"
+                        type="text"
+                        name="identifier"
+                        placeholder="Enter email or user id"
+                        value={form.identifier}
+                        onChange={handleChange}
+                        required
+                    />
 
-                <input
-                    type="password"
-                    name="password"
-                    placeholder="Password"
-                    value={form.password}
-                    onChange={handleChange}
-                    required
-                />
+                    <Input
+                        label="Password"
+                        type="password"
+                        name="password"
+                        placeholder="Enter password"
+                        value={form.password}
+                        onChange={handleChange}
+                        required
+                    />
 
-                <button type="submit">Login</button>
-            </form>
+                    <Button type="submit" disabled={loading}>
+                        {loading ? "Logging in..." : "Login"}
+                    </Button>
+                </form>
 
-            <p>
-                Don't have an account? <Link to="/signup">Signup</Link>
-            </p>
+                <p className="muted" style={{ marginTop: 12 }}>
+                    <Link to="/forgot-password" style={{ color: "var(--color-primary)", fontWeight: 700 }}>
+                        Forgot Password?
+                    </Link>
+                </p>
+
+                <p className="muted" style={{ marginTop: 10 }}>
+                    Don't have an account? <Link to="/signup" style={{ color: "var(--color-primary)", fontWeight: 700 }}>Signup</Link>
+                </p>
+            </Card>
         </div>
     );
 }

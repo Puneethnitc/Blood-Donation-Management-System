@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import API from "../../api/axios";
+import { useToast } from "../../context/ToastContext";
+import Card from "../../ui/Card";
+import Input from "../../ui/Input";
+import Button from "../../ui/Button";
 
 function Signup() {
   const [form, setForm] = useState({
@@ -10,8 +14,11 @@ function Signup() {
     password: "",
     user_type: "donor"
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   const handleChange = (e) => {
     setForm({
@@ -24,81 +31,53 @@ function Signup() {
     e.preventDefault();
 
     try {
+      setLoading(true);
+      setError("");
       const res = await API.post("/auth/signup", form);
 
-    //   alert(res.data.message || "Signup successful");
+      showToast("success", "Signup successful");
       navigate("/login");
 
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || "Signup failed");
+      setError(err.response?.data?.message || "Signup failed");
+      showToast("error", err.response?.data?.message || "Signup failed");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: "400px", margin: "100px auto" }}>
-      <h2>Signup</h2>
+    <div className="auth-page">
+      <Card className="auth-card">
+        <h2 style={{ marginBottom: 12 }}>Signup</h2>
+        {error ? <p style={{ color: "var(--color-error)", marginBottom: 12 }}>{error}</p> : null}
 
-      <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="form">
+          <Input label="Name" type="text" name="name" value={form.name} onChange={handleChange} required />
+          <Input label="Email" type="email" name="email" value={form.email} onChange={handleChange} required />
+          <Input label="Phone Number" type="text" name="phone_no" value={form.phone_no} onChange={handleChange} required />
+          <Input label="Password" type="password" name="password" value={form.password} onChange={handleChange} required />
 
-        {/* NAME */}
-        <input
-          type="text"
-          name="name"
-          placeholder="Name"
-          value={form.name}
-          onChange={handleChange}
-          required
-        />
+          <div className="field">
+            <div className="label">User Type</div>
+            <select className="input" name="user_type" value={form.user_type} onChange={handleChange}>
+              <option value="donor">Donor</option>
+              <option value="hospital">Hospital</option>
+              <option value="blood_bank">Blood Bank</option>
+            </select>
+          </div>
 
-        {/* EMAIL */}
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          value={form.email}
-          onChange={handleChange}
-          required
-        />
+          <Button type="submit" disabled={loading}>
+            {loading ? "Creating account..." : "Signup"}
+          </Button>
+        </form>
 
-        {/* PHONE */}
-        <input
-          type="text"
-          name="phone_no"
-          placeholder="Phone Number"
-          value={form.phone_no}
-          onChange={handleChange}
-          required
-        />
-
-        {/* PASSWORD */}
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          value={form.password}
-          onChange={handleChange}
-          required
-        />
-
-        {/* USER TYPE */}
-        <select
-          name="user_type"
-          value={form.user_type}
-          onChange={handleChange}
-        >
-          <option value="donor">Donor</option>
-          <option value="hospital">Hospital</option>
-          <option value="blood_bank">Blood Bank</option>
-          <option value="admin">Admin</option>
-        </select>
-
-        <button type="submit">Signup</button>
-      </form>
-
-      <p>
-        Already have an account? <Link to="/login">Login</Link>
-      </p>
+        <p className="muted" style={{ marginTop: 12 }}>
+          Already have an account?{" "}
+          <Link to="/login" style={{ color: "var(--color-primary)", fontWeight: 700 }}>Login</Link>
+        </p>
+      </Card>
     </div>
   );
 }

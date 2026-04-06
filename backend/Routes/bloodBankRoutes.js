@@ -7,7 +7,11 @@ const {
   getBloodBankDashboard,
   getInventory,
   getRequests,
-  getDonations
+  getDonations,
+  fulfillRequestRoute,
+  rejectRequestRoute,
+  adjustStockRoute,
+  writeOffStockRoute
 } = require("../controllers/bloodBankControllers");
 
 const authMiddleWare = require("../middleware/authMiddleWare");
@@ -57,6 +61,30 @@ router.post(
   authMiddleWare,
   roleMiddleware("BNK"),
   addDonationRoute
+);
+router.post(
+  "/request/:request_id/fulfill",
+  authMiddleWare,
+  roleMiddleware("BNK"),
+  fulfillRequestRoute
+);
+router.post(
+  "/request/:request_id/reject",
+  authMiddleWare,
+  roleMiddleware("BNK"),
+  rejectRequestRoute
+);
+router.put(
+  "/inventory/adjust",
+  authMiddleWare,
+  roleMiddleware("BNK"),
+  adjustStockRoute
+);
+router.delete(
+  "/inventory/:stock_id",
+  authMiddleWare,
+  roleMiddleware("BNK"),
+  writeOffStockRoute
 );
 
 module.exports = router;

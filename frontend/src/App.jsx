@@ -1,12 +1,15 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
+import ForgotPassword from "./pages/auth/ForgotPassword";
+import ResetPassword from "./pages/auth/ResetPassword";
 
 import ProtectedRoute from "./routes/ProtectedRoute";
 import DashboardLayout from "./pages/Layouts/DashboardLayout";
 import DashboardRouter from "./pages/dashboard/DashboardRouter";
 import RoleProtectedRoute from "./routes/RoleProtectedRoute";
+import { useAuth } from "./context/AuthContext";
 
 // setup
 import DonorSetup from "./pages/setup/DonorSetup";
@@ -27,15 +30,30 @@ import BloodInventory from "./pages/dashboard/bloodbank/BloodInventory";
 import Requests from "./pages/dashboard/bloodbank/Requests";
 import Donations from "./pages/dashboard/bloodbank/Donations";
 import AddDonation from "./pages/dashboard/bloodbank/AddDonation";
+import OwnedBankInventory from "./pages/dashboard/bloodbank/OwnedBankInventory";
+import OwnedBankRequests from "./pages/dashboard/bloodbank/OwnedBankRequests";
+import OwnedBankDonations from "./pages/dashboard/bloodbank/OwnedBankDonations";
+import OwnedBankAddDonation from "./pages/dashboard/bloodbank/OwnedBankAddDonation";
+import UserProfile from "./pages/dashboard/UserProfile";
 
 function App() {
+  const RootRedirect = () => {
+    const { token } = useAuth();
+    if (token) return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/login" replace />;
+  };
+
   return (
     <BrowserRouter>
       <Routes>
 
+        <Route path="/" element={<RootRedirect />} />
+
         {/* 🔓 PUBLIC */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* 🔐 PROTECTED */}
         <Route element={<ProtectedRoute />}>
@@ -51,18 +69,19 @@ function App() {
             {/* 🏠 MAIN ENTRY (ALL USERS) */}
             <Route path="/dashboard" element={<DashboardRouter />} />
 
+            {/* ✅ PROFILE (ALL USERS) */}
+            <Route path="/dashboard/profile" element={<UserProfile />} />
+
             {/* 🧑 DONOR */}
             <Route element={<RoleProtectedRoute allowedRoles={["donor"]} />}>
-              <Route path="/dashboard/profile" element={<DonorProfile />} />
               <Route path="/dashboard/history" element={<DonorHistory />} />
             </Route>
 
-            {/* 🏥 HOSPITAL (NO BANK) */}
+            {/* 🏥 HOSPITAL */}
             <Route
               element={
                 <RoleProtectedRoute
                   allowedRoles={["hospital"]}
-                  requireBank={false}
                 />
               }
             >
@@ -86,9 +105,18 @@ function App() {
               <Route path="/dashboard/add-donation" element={<AddDonation />} />
             </Route>
 
+            <Route element={<RoleProtectedRoute allowedRoles={["hospital"]} requireBank={true} />}>
+              <Route path="/dashboard/bank/inventory" element={<OwnedBankInventory />} />
+              <Route path="/dashboard/bank/requests" element={<OwnedBankRequests />} />
+              <Route path="/dashboard/bank/donations" element={<OwnedBankDonations />} />
+              <Route path="/dashboard/bank/add-donation" element={<OwnedBankAddDonation />} />
+            </Route>
+
           </Route>
         </Route>
 
+        {/* Fallback */}
+        <Route path="*" element={<RootRedirect />} />
       </Routes>
     </BrowserRouter>
   );

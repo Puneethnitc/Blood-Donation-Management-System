@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import API from "../../../api/axios";
+import Card from "../../../ui/Card";
+import EmptyState from "../../../ui/EmptyState";
 
 function DonorHistory() {
   const [history, setHistory] = useState([]);
@@ -31,60 +33,37 @@ function DonorHistory() {
 
   return (
     <div>
-      <h2 style={{ marginBottom: "20px" }}>Donation History</h2>
-
-      <div style={card}>
-
-        {history.length === 0 ? (
-          <p style={{ color: "#64748b" }}>
-            No donations yet
-          </p>
-        ) : (
-          <table style={table}>
-            <thead>
-              <tr>
-                <th style={th}>Date</th>
-                <th style={th}>Hospital</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {history.map((item, i) => (
-                <tr key={i}>
-                  <td style={td}>{formatDate(item.donation_date)}</td>
-                  <td style={td}>{item.name}</td>
+      <h2>Donation History</h2>
+      <div style={{ marginTop: 16 }}>
+        <Card title="History">
+          {history.length === 0 ? (
+            <EmptyState text="No donations yet" />
+          ) : (
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Blood Bank</th>
+                  <th>Blood Group</th>
+                  <th>Units</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-
+              </thead>
+              <tbody>
+                {history.map((item, i) => (
+                  <tr key={i}>
+                    <td>{formatDate(item.donation_date)}</td>
+                    <td>{item.name}</td>
+                    <td>{item.blood_grp}</td>
+                    <td>{item.units_donated}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </Card>
       </div>
     </div>
   );
 }
-
-const card = {
-  background: "white",
-  padding: "20px",
-  borderRadius: "10px",
-  boxShadow: "0 2px 6px rgba(0,0,0,0.08)"
-};
-
-const table = {
-  width: "100%",
-  borderCollapse: "collapse"
-};
-
-const th = {
-  textAlign: "left",
-  padding: "12px",
-  borderBottom: "1px solid #e2e8f0"
-};
-
-const td = {
-  padding: "12px",
-  borderBottom: "1px solid #f1f5f9"
-};
 
 export default DonorHistory;

@@ -56,7 +56,7 @@ CREATE TABLE Owns (
 
 -- 4. Transactions
 CREATE TABLE Donation (
-    donation_id BIGINT PRIMARY KEY,
+    donation_id INT PRIMARY KEY AUTO_INCREMENT,
     donor_id CHAR(10),
     units_donated INT CHECK (units_donated > 0),
     donation_date DATE DEFAULT (CURRENT_DATE),
@@ -79,7 +79,7 @@ CREATE TABLE Blood_Stock (
 
 -- 5. Requests & Issuance
 CREATE TABLE Blood_Request_from_hospital (
-    request_id BIGINT PRIMARY KEY,
+    request_id VARCHAR(36) PRIMARY KEY,
     hospital_id CHAR(10),
     final_status ENUM('Approved','Processing','Rejected','Cancelled') DEFAULT 'Processing',
     requested_date DATE DEFAULT (CURRENT_DATE),
@@ -91,7 +91,7 @@ CREATE TABLE Blood_Request_from_hospital (
 );
 
 CREATE TABLE Requests_sent_to_BloodBanks (
-    request_id BIGINT,
+    request_id VARCHAR(36),
     bank_id CHAR(10),
     request_status ENUM('Approved','Processing','Rejected','Cancelled') DEFAULT 'Processing',
     PRIMARY KEY (request_id, bank_id),
@@ -101,12 +101,12 @@ CREATE TABLE Requests_sent_to_BloodBanks (
 );
 
 CREATE TABLE Blood_issued_to_hospital (
-    issued_id BIGINT PRIMARY KEY,
+    issued_id VARCHAR(36) PRIMARY KEY,
     bank_id CHAR(10),
     blood_grp ENUM('A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'),
     units_issued INT CHECK (units_issued > 0),
     issued_date DATE DEFAULT (CURRENT_DATE),
-    request_id BIGINT,
+    request_id VARCHAR(36),
     -- RESTRICT prevents deleting a bank if it has an active issuance record
     FOREIGN KEY (bank_id) REFERENCES Blood_Bank(bank_id) ON DELETE RESTRICT,
     FOREIGN KEY (request_id) REFERENCES Blood_Request_from_hospital(request_id) ON DELETE RESTRICT

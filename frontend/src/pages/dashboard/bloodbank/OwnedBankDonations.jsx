@@ -3,25 +3,21 @@ import API from "../../../api/axios";
 import Card from "../../../ui/Card";
 import EmptyState from "../../../ui/EmptyState";
 
-function Donations() {
+function OwnedBankDonations() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     const fetch = async () => {
-      const res = await API.get("/bloodbank/donations");
+      const res = await API.get("/ownedbank/donations");
       setData(res.data);
       setLoading(false);
     };
     fetch();
   }, []);
-
   if (loading) return <p>Loading...</p>;
-
   return (
     <div>
-      <h2>Donation Records</h2>
-
+      <h2>Owned Bank Donations</h2>
       <div style={{ marginTop: 16 }}>
         <Card title="Donations">
           {data.length === 0 ? (
@@ -52,4 +48,4 @@ function Donations() {
   );
 }
 
-export default Donations;
+export default OwnedBankDonations;

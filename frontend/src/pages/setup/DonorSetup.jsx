@@ -1,14 +1,21 @@
 import { useState } from "react";
 import API from "../../api/axios";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "../../context/ToastContext";
+import Card from "../../ui/Card";
+import Input from "../../ui/Input";
+import Button from "../../ui/Button";
 
 function DonorSetup() {
   const [form, setForm] = useState({
     blood_grp: "",
     dob: ""
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   const handleChange = (e) => {
     setForm({
@@ -21,48 +28,50 @@ function DonorSetup() {
     e.preventDefault();
 
     try {
+      setLoading(true);
+      setError("");
       await API.post("/setup/donor", form);
-
-      alert("Profile completed");
+      showToast("success", "Profile completed");
       navigate("/dashboard");
 
     } catch (err) {
       console.error(err);
-      alert("Failed to save profile");
+      setError("Failed to save profile");
+      showToast("error", "Failed to save profile");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: "400px", margin: "100px auto" }}>
-      <h2>Complete Donor Profile</h2>
+    <div className="auth-page">
+      <Card className="auth-card">
+        <h2 style={{ marginBottom: 12 }}>Complete Donor Profile</h2>
+        {error ? <p style={{ color: "var(--color-error)", marginBottom: 12 }}>{error}</p> : null}
 
-      <form onSubmit={handleSubmit}>
-        <select
-          name="blood_grp"
-          value={form.blood_grp}
-          onChange={handleChange}
-          required
-        >
-          <option value="">Select Blood Group</option>
-          <option value="A+">A+</option>
-          <option value="A-">A-</option>
-          <option value="B+">B+</option>
-          <option value="B-">B-</option>
-          <option value="O+">O+</option>
-          <option value="O-">O-</option>
-          <option value="AB+">AB+</option>
-          <option value="AB-">AB-</option>
-        </select>
+        <form onSubmit={handleSubmit} className="form">
+          <div className="field">
+            <div className="label">Blood Group</div>
+            <select className="input" name="blood_grp" value={form.blood_grp} onChange={handleChange} required>
+              <option value="">Select Blood Group</option>
+              <option value="A+">A+</option>
+              <option value="A-">A-</option>
+              <option value="B+">B+</option>
+              <option value="B-">B-</option>
+              <option value="O+">O+</option>
+              <option value="O-">O-</option>
+              <option value="AB+">AB+</option>
+              <option value="AB-">AB-</option>
+            </select>
+          </div>
 
-        <input
-          type="date"
-          name="dob"
-          value={form.dob}
-          onChange={handleChange}
-        />
+          <Input label="Date of Birth" type="date" name="dob" value={form.dob} onChange={handleChange} />
 
-        <button type="submit">Save</button>
-      </form>
+          <Button type="submit" disabled={loading}>
+            {loading ? "Saving..." : "Save"}
+          </Button>
+        </form>
+      </Card>
     </div>
   );
 }
