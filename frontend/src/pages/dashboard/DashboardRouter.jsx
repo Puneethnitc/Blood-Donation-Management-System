@@ -4,6 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import DonorHome from "./donor/DonorHome";
 import BloodBankHome from "./bloodbank/BloodBankHome";
 import HospitalHome from "./hospital/HospitalHome";
+import AdminDashboard from "./admin/AdminDashboard";
 function DashboardRouter() {
   const { role, hasBloodBank } = useAuth();
   const [mode, setMode] = useState("hospital");
@@ -15,6 +16,10 @@ function DashboardRouter() {
 
   if (role === "donor") {
     return <DonorHome />;
+  }
+
+  if (role === "admin") {
+    return <AdminDashboard />;
   }
 
   if (role === "hospital" && hasBloodBank === false) {

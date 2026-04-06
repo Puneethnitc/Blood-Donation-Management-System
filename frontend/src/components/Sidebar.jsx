@@ -8,9 +8,23 @@ function Sidebar() {
         <div className="sidebar">
             <div className="sidebar__brand">BDMS</div>
 
-            <NavLink to="/dashboard/profile" className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>
-                Profile
-            </NavLink>
+            {role !== "admin" && (
+                <NavLink to="/dashboard/profile" className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>
+                    Profile
+                </NavLink>
+            )}
+
+            {/* 🛡️ ADMIN */}
+            {role === "admin" && (
+                <>
+                    <NavLink to="/dashboard/admin" className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>Dashboard</NavLink>
+                    <NavLink to="/dashboard/admin/users" className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>Users</NavLink>
+                    <NavLink to="/dashboard/admin/donations" className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>Donations</NavLink>
+                    <NavLink to="/dashboard/admin/requests" className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>Requests</NavLink>
+                    <NavLink to="/dashboard/admin/stock" className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>Stock</NavLink>
+                    <NavLink to="/dashboard/admin/issued" className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>Issued</NavLink>
+                </>
+            )}
 
             {/* 🧑 DONOR */}
             {role === "donor" && (

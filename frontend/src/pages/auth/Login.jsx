@@ -65,8 +65,12 @@ function Login() {
                 }
             }
             else {
-                // ALL go to same dashboard (router decides role)
-                navigate("/dashboard");
+                if (user_type === "admin") {
+                    navigate("/dashboard/admin");
+                } else {
+                    // ALL go to same dashboard (router decides role)
+                    navigate("/dashboard");
+                }
             }
         } catch (err) {
             console.error(err);

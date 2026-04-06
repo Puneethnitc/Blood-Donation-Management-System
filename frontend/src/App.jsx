@@ -35,6 +35,12 @@ import OwnedBankRequests from "./pages/dashboard/bloodbank/OwnedBankRequests";
 import OwnedBankDonations from "./pages/dashboard/bloodbank/OwnedBankDonations";
 import OwnedBankAddDonation from "./pages/dashboard/bloodbank/OwnedBankAddDonation";
 import UserProfile from "./pages/dashboard/UserProfile";
+import AdminDashboard from "./pages/dashboard/admin/AdminDashboard";
+import AdminUsers from "./pages/dashboard/admin/AdminUsers";
+import AdminDonations from "./pages/dashboard/admin/AdminDonations";
+import AdminRequests from "./pages/dashboard/admin/AdminRequests";
+import AdminStock from "./pages/dashboard/admin/AdminStock";
+import AdminIssued from "./pages/dashboard/admin/AdminIssued";
 
 function App() {
   const RootRedirect = () => {
@@ -71,6 +77,16 @@ function App() {
 
             {/* ✅ PROFILE (ALL USERS) */}
             <Route path="/dashboard/profile" element={<UserProfile />} />
+
+            {/* 🛡️ ADMIN */}
+            <Route element={<RoleProtectedRoute allowedRoles={["admin"]} />}>
+              <Route path="/dashboard/admin" element={<AdminDashboard />} />
+              <Route path="/dashboard/admin/users" element={<AdminUsers />} />
+              <Route path="/dashboard/admin/donations" element={<AdminDonations />} />
+              <Route path="/dashboard/admin/requests" element={<AdminRequests />} />
+              <Route path="/dashboard/admin/stock" element={<AdminStock />} />
+              <Route path="/dashboard/admin/issued" element={<AdminIssued />} />
+            </Route>
 
             {/* 🧑 DONOR */}
             <Route element={<RoleProtectedRoute allowedRoles={["donor"]} />}>

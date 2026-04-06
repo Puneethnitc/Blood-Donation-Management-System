@@ -26,7 +26,7 @@ const signupUser = async (req, res) => {
       return res.status(400).json({ message: "Invalid user type" });
     }
 
-    const user = await createUser({
+    const created = await createUser({
       name,
       email,
       phone_no,
@@ -34,9 +34,15 @@ const signupUser = async (req, res) => {
       user_type,
     });
 
+    // server generates ids; enforce prefix correctness
+    if (user_type === "admin" && !created.user_id.startsWith("ADM")) {
+      return res.status(400).json({ message: "Admin ID must start with ADM" });
+    }
+
     res.status(201).json({
       message: "User registered successfully",
-      success:true
+      success:true,
+      user_id: created.user_id
     });
 
   } catch (error) {

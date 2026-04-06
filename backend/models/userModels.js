@@ -39,7 +39,7 @@ const createUser =async ({ name, email, phone_no, password, user_type }) => {
       "insert into \`User\` (user_id,name,email,phone_no,password_hash,user_type,created_dt) values(?,?,?,?,?,?,CURDATE())",
       [user_id,name,email,phone_no,password_hash,user_type]
     )
-    return rows;
+    return { user_id, result: rows };
 };
 
 module.exports = {

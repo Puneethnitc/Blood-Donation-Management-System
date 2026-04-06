@@ -59,9 +59,15 @@ const loginUser = async (req, res) => {
       has_blood_bank = true;
     }
 
+    if (user_type === "admin") {
+      // admin has no setup tables
+      profile_complete = true;
+      has_blood_bank = false;
+    }
+
     // 🔥 generate token
     const token = jwt.sign(
-      { user_id: user.user_id, bank_id },
+      { user_id: user.user_id, user_type, bank_id },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
