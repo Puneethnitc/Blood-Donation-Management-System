@@ -54,6 +54,7 @@ function Requests() {
                   <th>Hospital</th>
                   <th>Blood Group</th>
                   <th>Units</th>
+                  <th>Request ID</th>
                   <th>Status</th>
                   <th>Action</th>
                 </tr>
@@ -64,6 +65,7 @@ function Requests() {
                     <td>{req.hospital_name}</td>
                     <td><b>{req.blood_grp}</b></td>
                     <td>{req.units}</td>
+                    <td>{req.request_id}</td>
                     <td><Badge status={req.status} /></td>
                     <td>
                       {req.status === "Processing" ? (

@@ -68,10 +68,13 @@ const getHospitalRequests = async (hospital_id) => {
       r.requested_date,
       rs.bank_id,
       rs.request_status,
-      u.name AS bank_name
+      u.name AS bank_name,
+      i.issued_id
     FROM Blood_Request_from_hospital r
     JOIN Requests_sent_to_BloodBanks rs ON r.request_id = rs.request_id
     JOIN User u ON rs.bank_id = u.user_id
+    LEFT JOIN Blood_issued_to_hospital i
+      ON i.request_id = rs.request_id AND i.bank_id = rs.bank_id
     WHERE r.hospital_id = ?
     ORDER BY r.requested_date DESC
     `,

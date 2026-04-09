@@ -76,7 +76,14 @@ function HospitalRequests() {
               <tbody>
                 {req.banks.map((b) => (
                   <tr key={b.bank_id}>
-                    <td>{b.bank_name}</td>
+                    <td>
+                      {b.bank_name}
+                      {b.status === "Approved" && b.issued_id ? (
+                        <span style={{ marginLeft: 8, fontSize: 12, color: "var(--color-muted)" }}>
+                          Issue #{String(b.issued_id).slice(0, 8)}
+                        </span>
+                      ) : null}
+                    </td>
                     <td><Badge status={b.status} /></td>
                   </tr>
                 ))}

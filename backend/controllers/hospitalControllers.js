@@ -133,7 +133,8 @@ const getHospitalRequestsRoute = async (req, res) => {
       grouped[row.request_id].banks.push({
         bank_id: row.bank_id,
         bank_name: row.bank_name,
-        status: row.request_status
+        status: row.request_status,
+        issued_id: row.issued_id
       });
     }
 
