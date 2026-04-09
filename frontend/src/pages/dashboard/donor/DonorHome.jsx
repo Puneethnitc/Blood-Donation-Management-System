@@ -10,11 +10,24 @@ function DonorHome() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const prof = await API.get("/donor/profile");
-      const last = await API.get("/donor/lastdt");
+      try {
+        const prof = await API.get("/donor/profile");
+        setProfile(prof.data);
+      } catch (err) {
+        console.error("Failed to load donor profile", err);
+      }
 
-      setProfile(prof.data);
-      setLastDonation(last.data);
+      try {
+        const last = await API.get("/donor/lastdt");
+        setLastDonation(last.data);
+      } catch (err) {
+        if (err.response?.status === 404) {
+          setLastDonation({ lastDonation: null });
+        } else {
+          console.error("Failed to load last donation", err);
+          setLastDonation({ lastDonation: null });
+        }
+      }
     };
 
     fetchData();

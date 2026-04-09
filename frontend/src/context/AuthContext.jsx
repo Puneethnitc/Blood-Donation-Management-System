@@ -42,5 +42,6 @@ export function AuthProvider({ children }) {
   );
 }
 
-// ✅ THIS LINE IS THE FIX
+
 export const useAuth = () => useContext(AuthContext);
+useAuth;

@@ -63,9 +63,10 @@ const lastDonationRoute=async (req,res)=>{
         const lastDonation = await getLastDonation(userId);
 
         if (!lastDonation) {
-            return res.status(404).json({
+            return res.status(200).json({
                 message: "No donations found",
-                success: false
+                lastDonation: null,
+                success: true
             });
         }
 

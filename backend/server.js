@@ -39,6 +39,7 @@ app.use('/api/user', userRoutes)
 app.use('/api/admin', adminRoutes)
 
 // Test route
+
 app.get("/", (req, res) => {
   res.json({
     message: "API working",
