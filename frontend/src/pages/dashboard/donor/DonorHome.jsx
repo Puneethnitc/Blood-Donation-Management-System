@@ -12,7 +12,8 @@ function DonorHome() {
     const fetchData = async () => {
       try {
         const prof = await API.get("/donor/profile");
-        setProfile(prof.data);
+        const data = prof.data || {};
+        setProfile({ ...data.profile, ...data.details });
       } catch (err) {
         console.error("Failed to load donor profile", err);
       }
