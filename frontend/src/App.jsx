@@ -24,6 +24,7 @@ import DonorHistory from "./pages/dashboard/donor/DonorHistory";
 import HospitalRequest from "./pages/dashboard/hospital/HospitalRequest";
 import HospitalRequests from "./pages/dashboard/hospital/HospitalRequests";
 import FindBloodBanks from "./pages/dashboard/hospital/FindBloodBanks";
+import HospitalOwnBank from "./pages/dashboard/hospital/HospitalOwnBank";
 
 // blood bank
 import BloodInventory from "./pages/dashboard/bloodbank/BloodInventory";
@@ -31,9 +32,6 @@ import Requests from "./pages/dashboard/bloodbank/Requests";
 import Donations from "./pages/dashboard/bloodbank/Donations";
 import AddDonation from "./pages/dashboard/bloodbank/AddDonation";
 import OwnedBankInventory from "./pages/dashboard/bloodbank/OwnedBankInventory";
-import OwnedBankRequests from "./pages/dashboard/bloodbank/OwnedBankRequests";
-import OwnedBankDonations from "./pages/dashboard/bloodbank/OwnedBankDonations";
-import OwnedBankAddDonation from "./pages/dashboard/bloodbank/OwnedBankAddDonation";
 import UserProfile from "./pages/dashboard/UserProfile";
 import AdminDashboard from "./pages/dashboard/admin/AdminDashboard";
 import AdminUsers from "./pages/dashboard/admin/AdminUsers";
@@ -98,6 +96,7 @@ function App() {
               element={
                 <RoleProtectedRoute
                   allowedRoles={["hospital"]}
+                  requireBank={false}
                 />
               }
             >
@@ -106,11 +105,11 @@ function App() {
               <Route path="/dashboard/find-banks" element={<FindBloodBanks />} />
             </Route>
 
-            {/* 🩸 BLOOD BANK (includes hospital WITH bank) */}
+            {/* 🩸 BLOOD BANK */}
             <Route
               element={
                 <RoleProtectedRoute
-                  allowedRoles={["blood_bank", "hospital"]}
+                  allowedRoles={["blood_bank"]}
                   requireBank={true}
                 />
               }
@@ -121,11 +120,10 @@ function App() {
               <Route path="/dashboard/add-donation" element={<AddDonation />} />
             </Route>
 
+            {/* 🏥 HOSPITAL WITH OWNED BANK */}
             <Route element={<RoleProtectedRoute allowedRoles={["hospital"]} requireBank={true} />}>
               <Route path="/dashboard/bank/inventory" element={<OwnedBankInventory />} />
-              <Route path="/dashboard/bank/requests" element={<OwnedBankRequests />} />
-              <Route path="/dashboard/bank/donations" element={<OwnedBankDonations />} />
-              <Route path="/dashboard/bank/add-donation" element={<OwnedBankAddDonation />} />
+              <Route path="/dashboard/bank/use" element={<HospitalOwnBank />} />
             </Route>
 
           </Route>

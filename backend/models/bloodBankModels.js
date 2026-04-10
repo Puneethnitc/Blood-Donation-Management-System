@@ -94,6 +94,14 @@ const insertBloodStockWithLock = async (
 const getDashboardData = async (bank_id) => {
   const conn = db.promise();
 
+  // bank identity
+  const [bankInfo] = await conn.query(
+    `SELECT u.user_id AS bank_id, u.name AS bank_name, u.email AS bank_email
+     FROM \`User\` u
+     WHERE u.user_id = ?`,
+    [bank_id]
+  );
+
   // total units
   const [total] = await conn.query(
     `SELECT SUM(units_available) AS total_units
@@ -130,6 +138,9 @@ const getDashboardData = async (bank_id) => {
   );
 
   return {
+    bank_id: bankInfo[0]?.bank_id || bank_id,
+    bank_name: bankInfo[0]?.bank_name || "",
+    bank_email: bankInfo[0]?.bank_email || "",
     total_units: total[0].total_units || 0,
     pending_requests: pending[0].pending_requests,
     donations_this_month: donations[0].donations_this_month,
@@ -167,12 +178,15 @@ const getRequestData = async (bank_id) => {
       r.blood_grp,
       r.units_required AS units,
       rs.request_status AS status,
-      u.name AS hospital_name
+      u.name AS hospital_name,
+      i.issued_id
     FROM Requests_sent_to_BloodBanks rs
     JOIN Blood_Request_from_hospital r 
       ON rs.request_id = r.request_id
     JOIN User u 
       ON r.hospital_id = u.user_id
+    LEFT JOIN Blood_issued_to_hospital i 
+      ON i.request_id = r.request_id AND i.bank_id = rs.bank_id
     WHERE rs.bank_id = ?
     ORDER BY r.requested_date DESC
     `,
@@ -274,14 +288,15 @@ const fulfillRequest = async (conn, {request_id, bank_id}) => {
      WHERE request_id = ?`,
     [request_id]
   );
+  const issued_id = uuidv4();
   await conn.query(
     `INSERT INTO Blood_issued_to_hospital
       (issued_id, bank_id, blood_grp, units_issued, issued_date, request_id)
      VALUES (?,?, ?, ?, CURDATE(), ?)`,
-    [uuidv4(), bank_id,request.blood_grp, request.units_required, request_id]
+    [issued_id, bank_id, request.blood_grp, request.units_required, request_id]
   );
 
-  return { success: true, message: "Request fulfilled successfully." };
+  return { success: true, message: "Request fulfilled successfully.", issued_id };
 };
 
 const rejectRequest = async (conn, {request_id, bank_id}) => {
@@ -380,13 +395,14 @@ const useOwnStock = async (conn, bank_id, hospital_id, blood_grp, units, reason 
       [d.units, d.stock_id, d.bank_id]
     );
   }
+  const issued_id = uuidv4();
   await conn.query(
     `INSERT INTO Blood_Issued_to_Hospital
       (issued_id, bank_id, hospital_id, blood_grp, units_issued, issued_date, request_id)
      VALUES (?, ?, ?, ?, ?, CURDATE(), NULL)`,
-    [uuidv4(), bank_id, hospital_id, blood_grp, units]
+    [issued_id, bank_id, hospital_id, blood_grp, units]
   );
-  return { success: true, message: `Stock used for ${reason}` };
+  return { success: true, message: `Stock used for ${reason}`, issued_id };
 };
 module.exports = {
   checkDonorExists,

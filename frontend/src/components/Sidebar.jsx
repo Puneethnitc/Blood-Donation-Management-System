@@ -57,16 +57,12 @@ function Sidebar() {
                 </>
             )}
 
-            {/* 🏥 HOSPITAL (WITH BANK → behaves like blood bank) */}
+            {/* 🏥 HOSPITAL (WITH OWNED BANK) */}
             {role === "hospital" && hasBloodBank && (
                 <>
                     <NavLink to="/dashboard" className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>Dashboard</NavLink>
-                    <NavLink to="/dashboard/request" className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>Request Blood (External)</NavLink>
-                    <NavLink to="/dashboard/my-requests" className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>Hospital Requests</NavLink>
                     <NavLink to="/dashboard/bank/inventory" className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>Bank Inventory</NavLink>
-                    <NavLink to="/dashboard/bank/requests" className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>Bank Incoming Requests</NavLink>
-                    <NavLink to="/dashboard/bank/donations" className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>Bank Donations</NavLink>
-                    <NavLink to="/dashboard/bank/add-donation" className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>Bank Add Donation</NavLink>
+                    <NavLink to="/dashboard/bank/use" className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>Take from Own Bank</NavLink>
                 </>
             )}
         </div>

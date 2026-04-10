@@ -188,7 +188,8 @@ const useStockRoute = async (req, res) => {
     await conn.commit();
     return res.json({
       ...result,
-      notification: { type: "success", text: "Own stock used successfully" }
+      notification: { type: "success", text: "Own stock used successfully" },
+      issued_id: result.issued_id
     });
   } catch (err) {
     await conn.rollback();

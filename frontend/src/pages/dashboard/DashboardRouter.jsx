@@ -1,13 +1,12 @@
-import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 
 import DonorHome from "./donor/DonorHome";
 import BloodBankHome from "./bloodbank/BloodBankHome";
 import HospitalHome from "./hospital/HospitalHome";
 import AdminDashboard from "./admin/AdminDashboard";
+
 function DashboardRouter() {
-  const { role, hasBloodBank } = useAuth();
-  const [mode, setMode] = useState("hospital");
+  const { role } = useAuth();
 
   // 🔥 WAIT until auth loads
   if (!role) {
@@ -22,19 +21,8 @@ function DashboardRouter() {
     return <AdminDashboard />;
   }
 
-  if (role === "hospital" && hasBloodBank === false) {
+  if (role === "hospital") {
     return <HospitalHome />;
-  }
-
-  if (role === "hospital" && hasBloodBank === true) {
-    return (
-      <div>
-        <button onClick={() => setMode((m) => (m === "hospital" ? "bank" : "hospital"))}>
-          {mode === "hospital" ? "Switch to Blood Bank View" : "Switch to Hospital View"}
-        </button>
-        {mode === "hospital" ? <HospitalHome /> : <BloodBankHome />}
-      </div>
-    );
   }
 
   if (role === "blood_bank") {
