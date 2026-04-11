@@ -81,7 +81,8 @@ const addOwnedDonation = async (req, res) => {
     await insertBloodStockWithLock(conn, {
       bank_id: req.bank_id,
       blood_grp,
-      units_available: units
+      units_available: units,
+      donation_id
     });
     await conn.commit();
     return res.status(201).json({

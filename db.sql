@@ -41,7 +41,6 @@ CREATE TABLE Organization_Location (
     organisation_id CHAR(10) PRIMARY KEY,
     latitude DECIMAL(9,6),
     longitude DECIMAL(9,6),
-    UNIQUE (latitude, longitude),
     FOREIGN KEY (organisation_id) REFERENCES User(user_id) ON DELETE RESTRICT
 );
 

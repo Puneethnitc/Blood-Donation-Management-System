@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import API from "../../../api/axios";
 import { useToast } from "../../../context/ToastContext";
+import { formatDate } from "../../../utils/formatDate";
 
 function DonorProfile() {
   const [form, setForm] = useState({
@@ -18,7 +19,10 @@ function DonorProfile() {
     const fetch = async () => {
       try {
         const res = await API.get("/donor/profile");
-        setForm(res.data);
+        setForm({
+          ...res.data,
+          dob: formatDate(res.data.dob)
+        });
         setLoading(false);
       } catch (err) {
         console.error(err);

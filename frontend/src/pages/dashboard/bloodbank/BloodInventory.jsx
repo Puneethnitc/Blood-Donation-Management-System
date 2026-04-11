@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import API from "../../../api/axios";
 import Card from "../../../ui/Card";
 import EmptyState from "../../../ui/EmptyState";
+import { formatDate } from "../../../utils/formatDate";
 
 function BloodInventory() {
   const [data, setData] = useState(null);
@@ -51,6 +52,7 @@ function BloodInventory() {
                 <tr>
                   <th>Stock #</th>
                   <th>Blood Group</th>
+                  <th>Donor ID</th>
                   <th>Units</th>
                   <th>Collection Date</th>
                 </tr>
@@ -60,8 +62,9 @@ function BloodInventory() {
                   <tr key={`${item.bank_id}-${item.stock_id}`}>
                     <td>{item.stock_id}</td>
                     <td><b>{item.blood_grp}</b></td>
+                    <td>{item.donor_id || "—"}</td>
                     <td>{item.units_available}</td>
-                    <td>{item.collection_dt}</td>
+                    <td>{formatDate(item.collection_dt)}</td>
                   </tr>
                 ))}
               </tbody>

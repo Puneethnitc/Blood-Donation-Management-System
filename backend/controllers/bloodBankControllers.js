@@ -105,7 +105,8 @@ const blood_grp = req.body.blood_grp;
     await insertBloodStockWithLock(connection, {
       bank_id,
       blood_grp,
-      units_available: units
+      units_available: units,
+      donation_id
     });
 
     await connection.commit();

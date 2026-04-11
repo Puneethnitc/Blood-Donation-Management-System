@@ -5,6 +5,7 @@ import Card from "../../../ui/Card";
 import Input from "../../../ui/Input";
 import Button from "../../../ui/Button";
 import EmptyState from "../../../ui/EmptyState";
+import { formatDate } from "../../../utils/formatDate";
 
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"];
 const PRIORITY_OPTIONS = [
@@ -137,7 +138,7 @@ function HospitalOwnBank() {
                     <td>{item.stock_id}</td>
                     <td><b>{item.blood_grp}</b></td>
                     <td>{item.units_available}</td>
-                    <td>{item.collection_dt}</td>
+                    <td>{formatDate(item.collection_dt)}</td>
                   </tr>
                 ))}
               </tbody>

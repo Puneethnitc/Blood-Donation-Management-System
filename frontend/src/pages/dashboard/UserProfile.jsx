@@ -4,6 +4,7 @@ import Card from "../../ui/Card";
 import Input from "../../ui/Input";
 import Button from "../../ui/Button";
 import { useToast } from "../../context/ToastContext";
+import { formatDate } from "../../utils/formatDate";
 
 function UserProfile() {
   const [data, setData] = useState(null);
@@ -82,7 +83,7 @@ function UserProfile() {
             <table className="table">
               <tbody>
                 <tr><th>Blood Group</th><td>{data.extra?.blood_grp || "—"}</td></tr>
-                <tr><th>Date of Birth</th><td>{data.extra?.dob || "—"}</td></tr>
+                <tr><th>Date of Birth</th><td>{formatDate(data.extra?.dob) || "—"}</td></tr>
               </tbody>
             </table>
           ) : (

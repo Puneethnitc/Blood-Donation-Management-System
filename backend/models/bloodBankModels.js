@@ -68,7 +68,7 @@ const insertDonation = async (conn, { donor_id, units_donated, bank_id }) => {
 // 🔒 STOCK INSERT (SAFE)
 const insertBloodStockWithLock = async (
   conn,
-  { bank_id, blood_grp, units_available }
+  { bank_id, blood_grp, units_available, donation_id }
 ) => {
   const [rows] = await conn.query(
     `
@@ -85,10 +85,10 @@ const insertBloodStockWithLock = async (
   await conn.query(
     `
     INSERT INTO Blood_Stock
-    (stock_id, bank_id, blood_grp, units_available, collection_dt)
-    VALUES (?, ?, ?, ?, CURDATE())
+    (stock_id, bank_id, blood_grp, units_available, donation_id, collection_dt)
+    VALUES (?, ?, ?, ?, ?, CURDATE())
     `,
-    [nextStockId, bank_id, blood_grp, units_available]
+    [nextStockId, bank_id, blood_grp, units_available, donation_id]
   );
 };
 const getDashboardData = async (bank_id) => {
@@ -159,10 +159,16 @@ const getInventoryData = async (bank_id) => {
     [bank_id]
   );
   const [entries] = await conn.query(
-    `SELECT stock_id, bank_id, blood_grp, units_available, collection_dt
-     FROM Blood_Stock
-     WHERE bank_id = ?
-     ORDER BY collection_dt ASC, stock_id ASC`,
+    `SELECT bs.stock_id,
+            bs.bank_id,
+            bs.blood_grp,
+            bs.units_available,
+            d.donation_date AS collection_dt,
+            d.donor_id
+     FROM Blood_Stock bs
+     LEFT JOIN Donation d ON d.donation_id = bs.donation_id
+     WHERE bs.bank_id = ?
+     ORDER BY d.donation_date ASC, bs.stock_id ASC`,
     [bank_id]
   );
 
@@ -236,10 +242,11 @@ const fulfillRequest = async (conn, {request_id, bank_id}) => {
   }
 
   const [stockRows] = await conn.query(
-    `SELECT stock_id, bank_id, units_available
-     FROM Blood_Stock
-     WHERE bank_id = ? AND blood_grp = ? AND units_available > 0
-     ORDER BY collection_dt ASC, stock_id ASC
+    `SELECT bs.stock_id, bs.bank_id, bs.units_available
+     FROM Blood_Stock bs
+     LEFT JOIN Donation d ON d.donation_id = bs.donation_id
+     WHERE bs.bank_id = ? AND bs.blood_grp = ? AND bs.units_available > 0
+     ORDER BY d.donation_date ASC, bs.stock_id ASC
      FOR UPDATE`,
     [bank_id, request.blood_grp]
   );
@@ -344,9 +351,10 @@ const rejectRequest = async (conn, {request_id, bank_id}) => {
 
 const adjustStock = async (bank_id, stock_id, adjustment) => {
   const [currentRows] = await db.promise().query(
-    `SELECT stock_id, bank_id, blood_grp, units_available, collection_dt
-     FROM Blood_Stock
-     WHERE bank_id = ? AND stock_id = ?`,
+    `SELECT bs.stock_id, bs.bank_id, bs.blood_grp, bs.units_available, d.donation_date AS collection_dt
+     FROM Blood_Stock bs
+     LEFT JOIN Donation d ON d.donation_id = bs.donation_id
+     WHERE bs.bank_id = ? AND bs.stock_id = ?`,
     [bank_id, stock_id]
   );
   if (!currentRows.length) return null;
@@ -369,10 +377,11 @@ const writeOffStock = async (bank_id, stock_id) => {
 
 const useOwnStock = async (conn, bank_id, hospital_id, blood_grp, units, reason = "internal_use") => {
   const [stockRows] = await conn.query(
-    `SELECT stock_id, bank_id, units_available
-     FROM Blood_Stock
-     WHERE bank_id = ? AND blood_grp = ? AND units_available > 0
-     ORDER BY collection_dt ASC, stock_id ASC
+    `SELECT bs.stock_id, bs.bank_id, bs.units_available
+     FROM Blood_Stock bs
+     LEFT JOIN Donation d ON d.donation_id = bs.donation_id
+     WHERE bs.bank_id = ? AND bs.blood_grp = ? AND bs.units_available > 0
+     ORDER BY d.donation_date ASC, bs.stock_id ASC
      FOR UPDATE`,
     [bank_id, blood_grp]
   );
