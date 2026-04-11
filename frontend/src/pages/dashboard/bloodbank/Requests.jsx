@@ -18,6 +18,7 @@ function Requests() {
     } catch (err) {
       setError("Failed to load requests");
     }
+    
   };
 
   useEffect(() => {
