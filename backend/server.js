@@ -14,13 +14,16 @@ const bloodBankRoutes = require("./Routes/bloodBankRoutes.js")
 const hospitalRoutes = require("./Routes/hospitalRoutes.js")
 const profileSetupRoutes = require("./Routes/profileSetupRoutes.js")
 const profileStatusRoute = require("./Routes/profileStatusRoutes.js")
-
+const ownedBankRoutes = require("./Routes/ownedBankRoutes.js")
+const userRoutes = require("./Routes/userRoutes.js")
+const adminRoutes = require("./Routes/adminRoutes.js")
 app.use(
   cors({
     origin: "http://localhost:5173",
     credentials: true,
   })
 )
+
 
 app.use(express.json())
 
@@ -31,8 +34,12 @@ app.use('/api/donor', donorRoutes)
 app.use('/api/bloodbank', bloodBankRoutes)
 app.use('/api/hospital', hospitalRoutes)
 app.use('/api/profile/status', profileStatusRoute)
+app.use('/api/ownedbank', ownedBankRoutes)
+app.use('/api/user', userRoutes)
+app.use('/api/admin', adminRoutes)
 
 // Test route
+
 app.get("/", (req, res) => {
   res.json({
     message: "API working",

@@ -5,37 +5,26 @@ const authMiddleWare = require("../middleware/authMiddleWare");
 const roleMiddleware = require("../middleware/roleMiddleWare");
 
 const {
-    searchBanksRoute,
-    sendRequestRoute,
-    getHospitalRequestsRoute,
-    cancelRequestRoute,
-    incomingRequestsRoute
+  searchBanksRoute,
+  sendRequestRoute,
+  getHospitalRequestsRoute,
+  cancelRequestRoute,
+  cancelBankRequestRoute,
+  incomingRequestsRoute,
+  getHospitalDashboardRoute
 } = require("../controllers/hospitalControllers");
 
 
-// Dashboard (optional test route)
 router.get(
-    "/dashboard",
-    authMiddleWare,
-    roleMiddleware("HSP"),
-    (req, res) => {
-        res.json({
-            message: "Hospital dashboard working",
-            success: true
-        });
-    }
+  "/dashboard",
+  authMiddleWare,
+  roleMiddleware("HSP"),
+  getHospitalDashboardRoute
 );
 
 
 // Search Blood Banks
-router.post(
-    "/search-banks",
-    authMiddleWare,
-    roleMiddleware("HSP"),
-    searchBanksRoute
-);
-
-
+router.get("/find-banks", authMiddleWare,roleMiddleware("HSP"), searchBanksRoute);
 // Send Blood Request
 router.post(
     "/send-request",
@@ -47,7 +36,7 @@ router.post(
 
 // View My Requests
 router.get(
-    "/my-requests",
+    "/requests",
     authMiddleWare,
     roleMiddleware("HSP"),
     getHospitalRequestsRoute
@@ -59,6 +48,14 @@ router.put(
     authMiddleWare,
     roleMiddleware("HSP"),
     cancelRequestRoute
+);
+
+// Cancel Request for a specific bank
+router.put(
+    "/cancel/:request_id/:bank_id",
+    authMiddleWare,
+    roleMiddleware("HSP"),
+    cancelBankRequestRoute
 );
 
 

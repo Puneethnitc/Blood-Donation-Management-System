@@ -1,10 +1,10 @@
 const db=require("../config/db")
 
 const getDonorDetails=async (donorId)=>{
-     const rows=await db.promise().query(
+     const [rows] = await db.promise().query(
         'select * from Donor where donor_id=?',
         [donorId]
-    )
+    );
     return rows[0];
 }
 

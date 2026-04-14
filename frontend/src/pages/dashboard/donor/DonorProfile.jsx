@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import API from "../../../api/axios";
+import { useToast } from "../../../context/ToastContext";
+import { formatDate } from "../../../utils/formatDate";
 
 function DonorProfile() {
   const [form, setForm] = useState({
@@ -11,12 +13,16 @@ function DonorProfile() {
   });
 
   const [loading, setLoading] = useState(true);
+  const { showToast } = useToast();
 
   useEffect(() => {
     const fetch = async () => {
       try {
         const res = await API.get("/donor/profile");
-        setForm(res.data);
+        setForm({
+          ...res.data,
+          dob: formatDate(res.data.dob)
+        });
         setLoading(false);
       } catch (err) {
         console.error(err);
@@ -38,10 +44,10 @@ function DonorProfile() {
 
     try {
       await API.put("/profile/update", form);
-      alert("Profile updated successfully");
+      showToast("success", "Profile updated successfully");
     } catch (err) {
       console.error(err);
-      alert("Update failed");
+      showToast("error", "Update failed");
     }
   };
 

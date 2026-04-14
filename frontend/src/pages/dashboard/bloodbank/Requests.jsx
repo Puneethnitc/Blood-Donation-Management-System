@@ -1,74 +1,92 @@
 import { useEffect, useState } from "react";
 import API from "../../../api/axios";
+import { useToast } from "../../../context/ToastContext";
+import Card from "../../../ui/Card";
+import Badge from "../../../ui/Badge";
+import Button from "../../../ui/Button";
+import EmptyState from "../../../ui/EmptyState";
 
 function Requests() {
-    const [data, setData] = useState([]);
+  const [data, setData] = useState([]);
+  const [error, setError] = useState("");
+  const { showToast } = useToast();
 
-    const fetchData = async () => {
-        const res = await API.get("/bloodbank/requests");
-        setData(res.data);
-    };
+  const fetchData = async () => {
+    try {
+      const res = await API.get("/bloodbank/requests");
+      setData(res.data);
+    } catch (err) {
+      setError("Failed to load requests");
+    }
+    
+  };
 
-    useEffect(() => {
-        fetchData(); // first load
+  useEffect(() => {
+    fetchData();
 
-        const interval = setInterval(fetchData, 8000); // every 5 sec
+    const interval = setInterval(fetchData, 8000); // auto refresh
+    return () => clearInterval(interval);
+  }, []);
 
-        return () => clearInterval(interval); // cleanup
-    }, []);
-    const handleAction = async (req, action) => {
-        if (action === "fulfill") {
+  const handleAction = async (req, action) => {
+    try {
+      await API.post(`/bloodbank/request/${req.request_id}/${action}`);
+      fetchData();
+    } catch (err) {
+      setError("Error processing request");
+      showToast("error", "Failed to process request");
+    }
+  };
 
-            // 🔥 FRONTEND CHECK
-            if (req.available_units < req.units) {
-                alert("Not enough stock to fulfill");
-                return;
-            }
-        }
+  return (
+    <div>
+      <h2>Incoming Requests</h2>
+      {error && <p style={{ color: "red" }}>{error}</p>}
+      {data.length === 0 && <p>No data found</p>}
 
-        try {
-            await API.post(`/bloodbank/request/${req.request_id}/${action}`);
-            fetchData();
-        } catch (err) {
-            alert(err.response?.data?.message || "Error");
-        }
-    };
-
-    return (
-        <div>
-            <h2>Incoming Requests</h2>
-
-            {data.map((req) => (
-                <div key={req.request_id} style={card}>
-                    <h3>{req.hospital_name}</h3>
-                    <p>{req.blood_grp} ({req.units} units)</p>
-                    <p>Status: {req.status}</p>
-
-                    {req.status === "pending" && (
-                        <>
-                            <button
-                                disabled={req.available_units < req.units}
-                                onClick={() => handleAction(req, "fulfill")}
-                            >
-                                Fulfill
-                            </button>
-
-                            <button onClick={() => handleAction(req.request_id, "reject")}>
-                                Reject
-                            </button>
-                        </>
-                    )}
-                </div>
-            ))}
-        </div>
-    );
+      <div style={{ marginTop: 16 }}>
+        <Card title="Requests">
+          {data.length === 0 ? (
+            <EmptyState text="No incoming requests yet" />
+          ) : (
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Hospital</th>
+                  <th>Blood Group</th>
+                  <th>Units</th>
+                  <th>Request ID</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.map((req) => (
+                  <tr key={req.request_id}>
+                    <td>{req.hospital_name}</td>
+                    <td><b>{req.blood_grp}</b></td>
+                    <td>{req.units}</td>
+                    <td>{req.request_id}</td>
+                    <td><Badge status={req.status} /></td>
+                    <td>
+                      {req.status === "Processing" ? (
+                        <div style={{ display: "flex", gap: 8 }}>
+                          <Button onClick={() => handleAction(req, "fulfill")}>Fulfill</Button>
+                          <Button variant="danger" onClick={() => handleAction(req, "reject")}>Reject</Button>
+                        </div>
+                      ) : (
+                        <span className="muted">—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </Card>
+      </div>
+    </div>
+  );
 }
-
-const card = {
-    background: "white",
-    padding: "15px",
-    marginBottom: "10px",
-    borderRadius: "8px"
-};
 
 export default Requests;

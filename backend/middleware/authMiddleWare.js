@@ -16,7 +16,7 @@ const authMiddleWare=(req,res,next)=>{
         }
         const token=parts[1]
         // console.log("TOKEN:", token);
-        const decoded=jwt.verify(token,"secret21")
+        const decoded=jwt.verify(token, process.env.JWT_SECRET)
         req.user=decoded
 
         next()

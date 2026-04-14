@@ -1,6 +1,11 @@
 import { useState } from "react";
 import API from "../../api/axios";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "../../context/ToastContext";
+import { useAuth } from "../../context/AuthContext";
+import Card from "../../ui/Card";
+import Input from "../../ui/Input";
+import Button from "../../ui/Button";
 
 function HospitalSetup() {
   const [form, setForm] = useState({
@@ -13,8 +18,12 @@ function HospitalSetup() {
     bank_phone: "",
     bank_password: ""
   });
+  const { token, role, login } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -29,93 +38,62 @@ function HospitalSetup() {
     e.preventDefault();
 
     try {
-      await API.post("/setup/hospital", form);
+      setLoading(true);
+      setError("");
+      const res = await API.post("/setup/hospital", form);
+      showToast("success", "Setup complete");
 
-      alert("Setup complete");
+      if (form.owns_bank && res.data?.bank_id && token && role) {
+        login(token, role, true, res.data.bank_id);
+      }
+
       navigate("/dashboard");
 
     } catch (err) {
       console.error(err);
-      alert("Failed to setup");
+      setError("Failed to setup");
+      showToast("error", "Failed to setup");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: "400px", margin: "100px auto" }}>
-      <h2>Hospital Setup</h2>
+    <div className="auth-page">
+      <Card className="auth-card">
+        <h2 style={{ marginBottom: 12 }}>Hospital Setup</h2>
+        {error ? <p style={{ color: "var(--color-error)", marginBottom: 12 }}>{error}</p> : null}
 
-      <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="form">
+          <Input label="Latitude" type="text" name="latitude" value={form.latitude} onChange={handleChange} required />
+          <Input label="Longitude" type="text" name="longitude" value={form.longitude} onChange={handleChange} required />
 
-        <input
-          type="text"
-          name="latitude"
-          placeholder="Latitude"
-          value={form.latitude}
-          onChange={handleChange}
-          required
-        />
-
-        <input
-          type="text"
-          name="longitude"
-          placeholder="Longitude"
-          value={form.longitude}
-          onChange={handleChange}
-          required
-        />
-
-        <label>
-          <input
-            type="checkbox"
-            name="owns_bank"
-            checked={form.owns_bank}
-            onChange={handleChange}
-          />
-          Owns a Blood Bank?
-        </label>
-
-        {form.owns_bank && (
-          <>
+          <label style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <input
-              type="text"
-              name="bank_name"
-              placeholder="Blood Bank Name"
-              value={form.bank_name}
+              type="checkbox"
+              name="owns_bank"
+              checked={form.owns_bank}
               onChange={handleChange}
-              required
             />
+            <span style={{ fontWeight: 700 }}>Owns a Blood Bank?</span>
+          </label>
 
-            <input
-              type="email"
-              name="bank_email"
-              placeholder="Blood Bank Email"
-              value={form.bank_email}
-              onChange={handleChange}
-              required
-            />
+          {form.owns_bank && (
+            <Card title="Blood Bank Details" className="">
+              <div className="form">
+                <Input label="Blood Bank Name" type="text" name="bank_name" value={form.bank_name} onChange={handleChange} required />
+                <Input label="Blood Bank Email" type="email" name="bank_email" value={form.bank_email} onChange={handleChange} required />
+                <Input label="Blood Bank Phone" type="text" name="bank_phone" value={form.bank_phone} onChange={handleChange} required />
+                <Input label="Blood Bank Password" type="password" name="bank_password" value={form.bank_password} onChange={handleChange} required />
+              </div>
+            </Card>
+          )}
 
-            <input
-              type="text"
-              name="bank_phone"
-              placeholder="Blood Bank Phone"
-              value={form.bank_phone}
-              onChange={handleChange}
-              required
-            />
-
-            <input
-              type="password"
-              name="bank_password"
-              placeholder="Blood Bank Password"
-              value={form.bank_password}
-              onChange={handleChange}
-              required
-            />
-          </>
-        )}
-
-        <button type="submit">Save</button>
-      </form>
+          <Button type="submit" disabled={loading}>
+            {loading ? "Saving..." : "Save"}
+          </Button>
+        </form>
+      </Card>
     </div>
   );
 }
