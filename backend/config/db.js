@@ -1,4 +1,5 @@
 const mysql=require('mysql2')
+
 const db = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -8,6 +9,7 @@ const db = mysql.createPool({
   connectionLimit: 10, // Max concurrent connections
   queueLimit: 0        // 0 = No limit on waiting requests
 });
+<<<<<<< HEAD
 db.getConnection((err, connection) => {
     if(err) {
         console.error("Database connection failed:", err);
@@ -17,3 +19,7 @@ db.getConnection((err, connection) => {
     }
 });
 module.exports = db;
+=======
+
+module.exports = db; 
+>>>>>>> Krishna
